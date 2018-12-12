@@ -4,7 +4,7 @@
 
 main -> _ condition _ {% function(d) {return d[1]; } %}
 
-dataFeedMatch -> ("datafeed[" ( [\,]:* _ ("oracles"|"feed_name"|"mci"|"feed_value"|"ifseveral"|"ifnone") _ ("!="|">="|"<="|">"|"<"|"=") _ valueInDF _):* "]") {% id %}
+dataFeedMatch -> ("data_feed[" ( [\,]:* _ ("oracles"|"feed_name"|"mci"|"feed_value"|"ifseveral"|"ifnone") _ ("!="|">="|"<="|">"|"<"|"=") _ valueInDF _):* "]") {% id %}
 inputAndOutputMatch -> (("input"|"output") "[" ( [\,]:* _ ("address"|"amount"|"asset") _ ("!="|">="|"<="|">"|"<"|"=") _ valueInIO _):* "]") {% id %}
 
 IFELSE -> _ condition _ "?" _ AS _ ":" _ AS {% function(d) {return ['ifelse', d[1], d[5], d[9]];}%}
@@ -88,5 +88,5 @@ value -> AS {% id %}
 int -> [0-9]:+        {% function(d) {return d[0].join(""); } %}
 string -> "\"" [\w\s]:+ "\""        {% function(d) {return d[1].join("").trim(); } %}
 valueInDF -> "\"" [\w\[\]\.\,\s\:]:+ "\""        {% function(d) {return d[1].join("").trim(); } %}
-valueInIO-> [\w]:+       {% function(d) {return d[0].join("").trim(); } %}
+valueInIO-> [\w ]:+       {% function(d) {return d[0].join("").trim(); } %}
 _ -> [\s]:*     {% function(d) {return null; } %}
