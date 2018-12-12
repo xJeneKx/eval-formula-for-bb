@@ -1,0 +1,19 @@
+{
+  "name": "eval-formula-for-bb",
+  "version": "1.0.0",
+  "dependencies": {
+    "async": "^2.6.1",
+    "bignumber.js": "^8.0.1",
+    "byteballcore": "^0.2.93",
+    "nearley": "^2.15.1"
+  },
+  "devDependencies": {
+    "ava": "^0.25.0"
+  },
+  "scripts": {
+    "test": "ava"
+  },
+  "main": "index.js",
+  "author": "xJeneK",
+  "license": "ISC"
+}
