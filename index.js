@@ -268,7 +268,7 @@ exports.validate = function (formula, complexity, callback) {
 					});
 				});
 				break;
-			case 'ifelse':
+			case 'ternary':
 				async.eachSeries([arr[1]], function (arr2, cb2) {
 					if (BigNumber.isBigNumber(arr2)) {
 						cb2();
@@ -280,23 +280,26 @@ exports.validate = function (formula, complexity, callback) {
 						});
 					}
 				}, function () {
-					async.eachSeries([arr[2]], function (arr3, cb3) {
-						if (BigNumber.isBigNumber(arr3)) {
-							cb3();
-						} else {
-							evaluate(arr3, function (res) {
+					if (true) {
+						var result;
+						async.eachSeries([arr[2]], function (arr3, cb3) {
+							if (BigNumber.isBigNumber(arr3)) {
 								cb3();
-							});
-						}
-					}, function () {
-						cb(true);
-					})
+							} else {
+								evaluate(arr3, function (res) {
+									cb3();
+								});
+							}
+						}, function () {
+							cb(true);
+						})
+					}
 				});
 				break;
 			case 'e':
 				cb(true);
 				break;
-			case 'datafeed':
+			case 'data_feed':
 				var result = validDataFeed(arr[1], complexity);
 				complexity = result.complexity;
 				if (!result.error) {
@@ -314,6 +317,9 @@ exports.validate = function (formula, complexity, callback) {
 					error = true;
 					callback({error: 'Incorrect ' + arr[0], complexity});
 				}
+				break;
+			case 'concat':
+				cb(true);
 				break;
 			default:
 				if (BigNumber.isBigNumber(arr[0])) return cb(true);
@@ -358,11 +364,11 @@ function validInputAndOutput(params) {
 	return true;
 }
 
-function validDataFeed(params, complexity) {
-	if (params['oracles'] && params['feed_name']) {
-		for (var k in params) {
-			var operator = params[k].operator;
-			var value = params[k].value;
+function validDataFeed(arr, complexity) {
+	if (arr['oracles'] && arr['feed_name']) {
+		for (var k in arr) {
+			var operator = arr[k].operator;
+			var value = arr[k].value;
 			switch (k) {
 				case 'oracles':
 					if (operator !== '=') return {error: true, complexity};
@@ -757,7 +763,7 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 					});
 				});
 				break;
-			case 'ifelse':
+			case 'ternary':
 				var conditionResult;
 				async.eachSeries([arr[1]], function (arr2, cb2) {
 					if (BigNumber.isBigNumber(arr2)) {
@@ -808,84 +814,84 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 			case 'e':
 				cb(new BigNumber(Math.E));
 				break;
-			case 'datafeed':
+			case 'data_feed':
 			
-			function getDataFeed(params, cb) {
-				var arrAddresses = params.oracles.value.split(':');
-				var feed_name = params.feed_name.value;
-				var value = null;
-				var relation = '';
-				var mci_relation = '<=';
-				var min_mci = 0;
-				if (params.feed_value) {
-					value = params.feed_value.value;
-					relation = params.feed_value.operator;
-				}
-				if (params.mci) {
-					min_mci = params.mci.value;
-					mci_relation = params.mci.operator;
-				}
-				var ifseveral = 'ORDER BY main_chain_index DESC';
-				var abortIfSeveral = false;
-				if (params.ifseveral) {
-					if (params.ifseveral.value === 'first') {
-						ifseveral = 'ORDER BY main_chain_index ASC';
-					} else if (params.ifseveral.value === 'abort') {
-						ifseveral = '';
-						abortIfSeveral = true;
+				function getDataFeed(params, cb) {
+					var arrAddresses = params.oracles.value.split(':');
+					var feed_name = params.feed_name.value;
+					var value = null;
+					var relation = '';
+					var mci_relation = '<=';
+					var min_mci = 0;
+					if (params.feed_value) {
+						value = params.feed_value.value;
+						relation = params.feed_value.operator;
 					}
-				}
-				var ifnone = false;
-				if (params.ifnone && params.ifnone.value !== 'abort') {
-					var isNumber2 = /^-?\d+\.?\d*$/.test(params.ifnone.value);
-					if (isNumber2) {
-						ifnone = new BigNumber(params.ifnone.value);
-					} else {
-						ifnone = params.ifnone.value;
+					if (params.mci) {
+						min_mci = params.mci.value;
+						mci_relation = params.mci.operator;
 					}
-				}
-				
-				var value_condition = '';
-				var queryParams = [arrAddresses, feed_name];
-				if (value) {
-					var isNumber = /^-?\d+\.?\d*$/.test(value);
-					if (isNumber) {
-						var bForceNumericComparison = (['>', '>=', '<', '<='].indexOf(relation) >= 0);
-						var plus_0 = bForceNumericComparison ? '+0' : '';
-						value_condition = '(value' + plus_0 + relation + value + ' OR int_value' + relation + value + ')';
-					}
-					else {
-						value_condition = 'value' + relation + '?';
-						queryParams.push(value);
-					}
-				}
-				queryParams.push(objValidationState.last_ball_mci, min_mci);
-				conn.query(
-					"SELECT value, int_value FROM data_feeds CROSS JOIN units USING(unit) CROSS JOIN unit_authors USING(unit) \n\
-							WHERE address IN(?) AND feed_name=? " + (value_condition ? ' AND ' + value_condition : '') + " \n\
-						AND main_chain_index<=? AND main_chain_index" + mci_relation + "? AND sequence='good' AND is_stable=1 " + ifseveral + " LIMIT " + (abortIfSeveral ? "2" : "1"),
-					queryParams,
-					function (rows) {
-						if (rows.length) {
-							if (abortIfSeveral && rows.length > 1) {
-								cb('abort');
-							} else {
-								if (rows[0].value === null) {
-									cb(null, new BigNumber(rows[0].int_value));
-								} else {
-									cb(null, rows[0].value);
-								}
-							}
-						} else {
-							if (ifnone === false) {
-								cb('not found');
-							} else {
-								cb(null, ifnone);
-							}
+					var ifseveral = 'ORDER BY main_chain_index DESC';
+					var abortIfSeveral = false;
+					if (params.ifseveral) {
+						if (params.ifseveral.value === 'first') {
+							ifseveral = 'ORDER BY main_chain_index ASC';
+						} else if (params.ifseveral.value === 'abort') {
+							ifseveral = '';
+							abortIfSeveral = true;
 						}
 					}
-				);
-			}
+					var ifnone = false;
+					if (params.ifnone && params.ifnone.value !== 'abort') {
+						var isNumber2 = /^-?\d+\.?\d*$/.test(params.ifnone.value);
+						if (isNumber2) {
+							ifnone = new BigNumber(params.ifnone.value);
+						} else {
+							ifnone = params.ifnone.value;
+						}
+					}
+					
+					var value_condition = '';
+					var queryParams = [arrAddresses, feed_name];
+					if (value) {
+						var isNumber = /^-?\d+\.?\d*$/.test(value);
+						if (isNumber) {
+							var bForceNumericComparison = (['>', '>=', '<', '<='].indexOf(relation) >= 0);
+							var plus_0 = bForceNumericComparison ? '+0' : '';
+							value_condition = '(value' + plus_0 + relation + value + ' OR int_value' + relation + value + ')';
+						}
+						else {
+							value_condition = 'value' + relation + '?';
+							queryParams.push(value);
+						}
+					}
+					queryParams.push(objValidationState.last_ball_mci, min_mci);
+					conn.query(
+						"SELECT value, int_value FROM data_feeds CROSS JOIN units USING(unit) CROSS JOIN unit_authors USING(unit) \n\
+								WHERE address IN(?) AND feed_name=? " + (value_condition ? ' AND ' + value_condition : '') + " \n\
+							AND main_chain_index<=? AND main_chain_index" + mci_relation + "? AND sequence='good' AND is_stable=1 " + ifseveral + " LIMIT " + (abortIfSeveral ? "2" : "1"),
+						queryParams,
+						function (rows) {
+							if (rows.length) {
+								if (abortIfSeveral && rows.length > 1) {
+									cb('abort');
+								} else {
+									if (rows[0].value === null) {
+										cb(null, new BigNumber(rows[0].int_value));
+									} else {
+										cb(null, rows[0].value);
+									}
+								}
+							} else {
+								if (ifnone === false) {
+									cb('not found');
+								} else {
+									cb(null, ifnone);
+								}
+							}
+						}
+					);
+				}
 				
 				getDataFeed(arr[1], function (err, result) {
 					if (err) return callback(false);
@@ -895,73 +901,73 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 			case 'input':
 			case 'output':
 				var type = op + 's';
-			function findOutputOrInputAndReturnName(objParams) {
-				var asset = objParams.asset ? objParams.asset.value : null;
-				var operator = objParams.asset ? objParams.asset.operator : null;
-				var puts = [];
-				messages.forEach(function (message) {
-					if (message.payload) {
-						if (!asset) {
-							puts = puts.concat(message.payload[type]);
-						} else if (operator === '=' && asset === 'base' && !message.payload.asset) {
-							puts = puts.concat(message.payload[type]);
-						} else if (operator === '!=' && asset === 'base' && message.payload.asset) {
-							puts = puts.concat(message.payload[type]);
-						} else if (operator === '=' && asset === message.payload.asset && message.payload.asset) {
-							puts = puts.concat(message.payload[type]);
-						} else if (operator === '!=' && asset !== message.payload.asset && message.payload.asset) {
-							puts = puts.concat(message.payload[type]);
-						}
-					}
-				});
-				if (puts.length === 0) return '';
-				if (objParams.address) {
-					if (objParams.address.value === 'this address')
-						objParams.address.value = address;
-					
-					if (objParams.address.value === 'other address') {
-						objParams.address.value = address;
-						if (objParams.address.operator === '=') {
-							objParams.address.operator = '!=';
-						} else {
-							objParams.address.operator = '=';
-						}
-					}
-					
-					puts = puts.filter(function (put) {
-						if (objParams.address.operator === '=') {
-							return put.address === objParams.address.value;
-						} else {
-							return put.address !== objParams.address.value;
+				function findOutputOrInputAndReturnName(objParams) {
+					var asset = objParams.asset ? objParams.asset.value : null;
+					var operator = objParams.asset ? objParams.asset.operator : null;
+					var puts = [];
+					messages.forEach(function (message) {
+						if (message.payload) {
+							if (!asset) {
+								puts = puts.concat(message.payload[type]);
+							} else if (operator === '=' && asset === 'base' && !message.payload.asset) {
+								puts = puts.concat(message.payload[type]);
+							} else if (operator === '!=' && asset === 'base' && message.payload.asset) {
+								puts = puts.concat(message.payload[type]);
+							} else if (operator === '=' && asset === message.payload.asset && message.payload.asset) {
+								puts = puts.concat(message.payload[type]);
+							} else if (operator === '!=' && asset !== message.payload.asset && message.payload.asset) {
+								puts = puts.concat(message.payload[type]);
+							}
 						}
 					});
-				}
-				if (objParams.amount) {
-					objParams.amount.value = new BigNumber(objParams.amount.value);
-					puts = puts.filter(function (put) {
-						put.amount = new BigNumber(put.amount);
-						if (objParams.amount.operator === '=') {
-							return put.amount.eq(objParams.amount.value);
-						} else if (objParams.amount.operator === '>') {
-							return put.amount.gt(objParams.amount.value);
-						} else if (objParams.amount.operator === '<') {
-							return put.amount.lt(objParams.amount.value);
-						} else if (objParams.amount.operator === '<=') {
-							return put.amount.lte(objParams.amount.value);
-						} else if (objParams.amount.operator === '>=') {
-							return put.amount.gte(objParams.amount.value);
-						} else {
-							return !(put.amount.eq(objParams.amount.value));
+					if (puts.length === 0) return '';
+					if (objParams.address) {
+						if (objParams.address.value === 'this address')
+							objParams.address.value = address;
+						
+						if (objParams.address.value === 'other address') {
+							objParams.address.value = address;
+							if (objParams.address.operator === '=') {
+								objParams.address.operator = '!=';
+							} else {
+								objParams.address.operator = '=';
+							}
 						}
-					});
+						
+						puts = puts.filter(function (put) {
+							if (objParams.address.operator === '=') {
+								return put.address === objParams.address.value;
+							} else {
+								return put.address !== objParams.address.value;
+							}
+						});
+					}
+					if (objParams.amount) {
+						objParams.amount.value = new BigNumber(objParams.amount.value);
+						puts = puts.filter(function (put) {
+							put.amount = new BigNumber(put.amount);
+							if (objParams.amount.operator === '=') {
+								return put.amount.eq(objParams.amount.value);
+							} else if (objParams.amount.operator === '>') {
+								return put.amount.gt(objParams.amount.value);
+							} else if (objParams.amount.operator === '<') {
+								return put.amount.lt(objParams.amount.value);
+							} else if (objParams.amount.operator === '<=') {
+								return put.amount.lte(objParams.amount.value);
+							} else if (objParams.amount.operator === '>=') {
+								return put.amount.gte(objParams.amount.value);
+							} else {
+								return !(put.amount.eq(objParams.amount.value));
+							}
+						});
+					}
+					if (puts.length) {
+						if (puts.length > 1) return '';
+						return puts[0];
+					} else {
+						return '';
+					}
 				}
-				if (puts.length) {
-					if (puts.length > 1) return '';
-					return puts[0];
-				} else {
-					return '';
-				}
-			}
 				
 				var result = findOutputOrInputAndReturnName(arr[1]);
 				if (result === '') return callback(false);
@@ -973,6 +979,10 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 				} else {
 					cb(result[arr[2]]);
 				}
+				break;
+				
+			case 'concat':
+				cb(arr[1] + arr[2]);
 				break;
 			default:
 				if (BigNumber.isBigNumber(arr[0])) return cb(arr[0]);

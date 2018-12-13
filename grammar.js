@@ -21,13 +21,25 @@ var grammar = {
     {"name": "dataFeedMatch$subexpression$1$ebnf$1$subexpression$1$subexpression$1", "symbols": [{"literal":">"}]},
     {"name": "dataFeedMatch$subexpression$1$ebnf$1$subexpression$1$subexpression$1", "symbols": [{"literal":"<"}]},
     {"name": "dataFeedMatch$subexpression$1$ebnf$1$subexpression$1$subexpression$1", "symbols": [{"literal":"="}]},
-    {"name": "dataFeedMatch$subexpression$1$ebnf$1$subexpression$1", "symbols": ["dataFeedMatch$subexpression$1$ebnf$1$subexpression$1$ebnf$1", "_", "feedName", "_", "dataFeedMatch$subexpression$1$ebnf$1$subexpression$1$subexpression$1", "_", "valueInDF", "_"]},
+    {"name": "dataFeedMatch$subexpression$1$ebnf$1$subexpression$1", "symbols": ["dataFeedMatch$subexpression$1$ebnf$1$subexpression$1$ebnf$1", "paramName", "dataFeedMatch$subexpression$1$ebnf$1$subexpression$1$subexpression$1", "valueInDF"]},
     {"name": "dataFeedMatch$subexpression$1$ebnf$1", "symbols": ["dataFeedMatch$subexpression$1$ebnf$1", "dataFeedMatch$subexpression$1$ebnf$1$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "dataFeedMatch$subexpression$1", "symbols": ["dataFeedMatch$subexpression$1$string$1", "dataFeedMatch$subexpression$1$ebnf$1", {"literal":"]"}]},
     {"name": "dataFeedMatch", "symbols": ["dataFeedMatch$subexpression$1"], "postprocess": id},
-    {"name": "feedName$ebnf$1", "symbols": [/[a-z_]/]},
-    {"name": "feedName$ebnf$1", "symbols": ["feedName$ebnf$1", /[a-z_]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "feedName", "symbols": ["feedName$ebnf$1"], "postprocess": function(d) {return d[0].join("").trim(); }},
+    {"name": "paramName$string$1", "symbols": [{"literal":"o"}, {"literal":"r"}, {"literal":"a"}, {"literal":"c"}, {"literal":"l"}, {"literal":"e"}, {"literal":"s"}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "paramName", "symbols": ["_", "paramName$string$1"]},
+    {"name": "paramName$string$2", "symbols": [{"literal":"f"}, {"literal":"e"}, {"literal":"e"}, {"literal":"d"}, {"literal":"_"}, {"literal":"n"}, {"literal":"a"}, {"literal":"m"}, {"literal":"e"}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "paramName", "symbols": ["paramName$string$2"]},
+    {"name": "paramName$string$3", "symbols": [{"literal":"m"}, {"literal":"c"}, {"literal":"i"}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "paramName", "symbols": ["paramName$string$3"]},
+    {"name": "paramName$string$4", "symbols": [{"literal":"f"}, {"literal":"e"}, {"literal":"e"}, {"literal":"d"}, {"literal":"_"}, {"literal":"v"}, {"literal":"a"}, {"literal":"l"}, {"literal":"u"}, {"literal":"e"}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "paramName", "symbols": ["paramName$string$4"]},
+    {"name": "paramName$string$5", "symbols": [{"literal":"i"}, {"literal":"f"}, {"literal":"s"}, {"literal":"e"}, {"literal":"v"}, {"literal":"e"}, {"literal":"r"}, {"literal":"a"}, {"literal":"l"}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "paramName", "symbols": ["paramName$string$5"]},
+    {"name": "paramName$string$6", "symbols": [{"literal":"i"}, {"literal":"f"}, {"literal":"n"}, {"literal":"o"}, {"literal":"n"}, {"literal":"e"}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "paramName", "symbols": ["paramName$string$6", "_"], "postprocess": function(d) {return d[1]; }},
+    {"name": "valueInDF$ebnf$1", "symbols": [/[\w\[\]\.\, \:\-+_]/]},
+    {"name": "valueInDF$ebnf$1", "symbols": ["valueInDF$ebnf$1", /[\w\[\]\.\, \:\-+_]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "valueInDF", "symbols": ["_", {"literal":"\""}, "valueInDF$ebnf$1", {"literal":"\""}, "_"], "postprocess": function(d) {return d[2].join("").trim(); }},
     {"name": "inputAndOutputMatch$subexpression$1$subexpression$1$string$1", "symbols": [{"literal":"i"}, {"literal":"n"}, {"literal":"p"}, {"literal":"u"}, {"literal":"t"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "inputAndOutputMatch$subexpression$1$subexpression$1", "symbols": ["inputAndOutputMatch$subexpression$1$subexpression$1$string$1"]},
     {"name": "inputAndOutputMatch$subexpression$1$subexpression$1$string$2", "symbols": [{"literal":"o"}, {"literal":"u"}, {"literal":"t"}, {"literal":"p"}, {"literal":"u"}, {"literal":"t"}], "postprocess": function joiner(d) {return d.join('');}},
@@ -54,11 +66,14 @@ var grammar = {
     {"name": "inputAndOutputMatch$subexpression$1$ebnf$1", "symbols": ["inputAndOutputMatch$subexpression$1$ebnf$1", "inputAndOutputMatch$subexpression$1$ebnf$1$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "inputAndOutputMatch$subexpression$1", "symbols": ["inputAndOutputMatch$subexpression$1$subexpression$1", {"literal":"["}, "inputAndOutputMatch$subexpression$1$ebnf$1", {"literal":"]"}]},
     {"name": "inputAndOutputMatch", "symbols": ["inputAndOutputMatch$subexpression$1"], "postprocess": id},
-    {"name": "IFELSE", "symbols": ["_", "condition", "_", {"literal":"?"}, "_", "AS", "_", {"literal":":"}, "_", "AS"], "postprocess": function(d) {return ['ifelse', d[1], d[5], d[9]];}},
+    {"name": "ternary", "symbols": ["sCondition", {"literal":"?"}, "sAS", {"literal":":"}, "sAS"], "postprocess": function(d) {return ['ternary', d[0], d[2], d[4]];}},
+    {"name": "sCondition", "symbols": ["_", "condition", "_"], "postprocess": function(d) {return d[1];}},
+    {"name": "sAS", "symbols": ["_", "AS", "_"], "postprocess": function(d) {return d[1];}},
     {"name": "OR$string$1", "symbols": [{"literal":"|"}, {"literal":"|"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "OR", "symbols": ["condition2", "_", "OR$string$1", "_", "condition"], "postprocess": function(d) {return ['or', d[0], d[4]];}},
     {"name": "AND$string$1", "symbols": [{"literal":"&"}, {"literal":"&"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "AND", "symbols": ["condition2", "_", "AND$string$1", "_", "condition"], "postprocess": function(d) {return ['and', d[0], d[4]];}},
+    {"name": "concat", "symbols": ["string", "_", {"literal":"+"}, "_", "string"], "postprocess": function(d) {return ['concat', d[0], d[4]]}},
     {"name": "condition", "symbols": ["AS", "_", "conditional", "_", "AS"], "postprocess": function(d) {return ['condition', d[2], d[0], d[4]];}},
     {"name": "condition$string$1", "symbols": [{"literal":"="}, {"literal":"="}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "condition", "symbols": ["string", "_", "condition$string$1", "_", "string"], "postprocess": function(d) {return ['stringCondition', '==', d[0], d[4]];}},
@@ -71,7 +86,8 @@ var grammar = {
     {"name": "condition", "symbols": ["AND"], "postprocess": id},
     {"name": "condition", "symbols": ["OR"], "postprocess": id},
     {"name": "condition", "symbols": ["AS"], "postprocess": id},
-    {"name": "condition", "symbols": ["IFELSE"], "postprocess": id},
+    {"name": "condition", "symbols": ["ternary"], "postprocess": id},
+    {"name": "condition", "symbols": ["concat"], "postprocess": id},
     {"name": "condition2", "symbols": ["AS", "_", "conditional", "_", "AS"], "postprocess": function(d) {return ['condition', d[2], d[0], d[4]];}},
     {"name": "condition2", "symbols": ["AS"], "postprocess": id},
     {"name": "conditionals$string$1", "symbols": [{"literal":"="}, {"literal":"="}], "postprocess": function joiner(d) {return d.join('');}},
@@ -134,11 +150,11 @@ var grammar = {
     {"name": "N", "symbols": ["dataFeedMatch"], "postprocess":  function (d){
         var params = {};
                 for(var i = 0; i < d[0][1].length; i++){
-                	params[d[0][1][i][2]] = {};
-                	params[d[0][1][i][2]]['operator'] = d[0][1][i][4][0];
-                	params[d[0][1][i][2]]['value'] = d[0][1][i][6];
+                	params[d[0][1][i][1]] = {};
+                	params[d[0][1][i][1]]['operator'] = d[0][1][i][2][0];
+                	params[d[0][1][i][1]]['value'] = d[0][1][i][3];
                 }
-        return ['datafeed', params]
+        return ['data_feed', params]
         }
             },
     {"name": "N$subexpression$3$string$1", "symbols": [{"literal":"a"}, {"literal":"s"}, {"literal":"s"}, {"literal":"e"}, {"literal":"t"}], "postprocess": function joiner(d) {return d.join('');}},
@@ -160,15 +176,12 @@ var grammar = {
     {"name": "float", "symbols": ["int", {"literal":"."}, "int"], "postprocess": function(d) {return new BigNumber(d[0] + d[1] + d[2])}},
     {"name": "float", "symbols": ["int"], "postprocess": function(d) {return new BigNumber(d[0])}},
     {"name": "value", "symbols": ["AS"], "postprocess": id},
-    {"name": "int$ebnf$1", "symbols": [/[0-9]/]},
-    {"name": "int$ebnf$1", "symbols": ["int$ebnf$1", /[0-9]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "int$ebnf$1", "symbols": [/[-0-9]/]},
+    {"name": "int$ebnf$1", "symbols": ["int$ebnf$1", /[-0-9]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "int", "symbols": ["int$ebnf$1"], "postprocess": function(d) {return d[0].join(""); }},
     {"name": "string$ebnf$1", "symbols": [/[\w\s]/]},
     {"name": "string$ebnf$1", "symbols": ["string$ebnf$1", /[\w\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "string", "symbols": [{"literal":"\""}, "string$ebnf$1", {"literal":"\""}], "postprocess": function(d) {return d[1].join("").trim(); }},
-    {"name": "valueInDF$ebnf$1", "symbols": [/[\w\[\]\.\, \:\-+_]/]},
-    {"name": "valueInDF$ebnf$1", "symbols": ["valueInDF$ebnf$1", /[\w\[\]\.\, \:\-+_]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "valueInDF", "symbols": [{"literal":"\""}, "valueInDF$ebnf$1", {"literal":"\""}], "postprocess": function(d) {return d[1].join("").trim(); }},
     {"name": "valueInIO$ebnf$1", "symbols": [/[\w\s+\-\/=]/]},
     {"name": "valueInIO$ebnf$1", "symbols": ["valueInIO$ebnf$1", /[\w\s+\-\/=]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "valueInIO", "symbols": ["valueInIO$ebnf$1"], "postprocess": function(d) {return d[0].join("").trim(); }},
