@@ -4,7 +4,9 @@
 
 main -> _ condition _ {% function(d) {return d[1]; } %}
 
-dataFeedMatch -> ("data_feed[" ( [\,]:* _ ("oracles"|"feed_name"|"mci"|"feed_value"|"ifseveral"|"ifnone") _ ("!="|">="|"<="|">"|"<"|"=") _ valueInDF _):* "]") {% id %}
+dataFeedMatch -> ("data_feed[" ( [\,]:* _ feedName _ ("!="|">="|"<="|">"|"<"|"=") _ valueInDF _):* "]") {% id %}
+feedName -> [a-z_]:+ {% function(d) {return d[0].join("").trim(); } %}
+
 inputAndOutputMatch -> (("input"|"output") "[" ( [\,]:* _ ("address"|"amount"|"asset") _ ("!="|">="|"<="|">"|"<"|"=") _ valueInIO _):* "]") {% id %}
 
 IFELSE -> _ condition _ "?" _ AS _ ":" _ AS {% function(d) {return ['ifelse', d[1], d[5], d[9]];}%}
@@ -16,6 +18,8 @@ AND -> condition2 _ "&&" _ condition {% function(d) {return ['and', d[0], d[4]];
 condition -> AS _ conditional _ AS {% function(d) {return ['condition', d[2], d[0], d[4]];}%}
  			| string _ "==" _ string {% function(d) {return ['stringCondition', '==', d[0], d[4]];} %}
  			| string _ "!=" _ string {% function(d) {return ['stringCondition', '!=', d[0], d[4]];} %}
+ 			| condition _ "==" _ string {% function(d) {return ['stringCondition', '==', d[0], d[4]];} %}
+ 			| condition _ "!=" _ string {% function(d) {return ['stringCondition', '!=', d[0], d[4]];} %}
 			| AND {% id %}
 			| OR {% id %}
 			| AS {% id %}
@@ -62,9 +66,9 @@ N -> float          {% id %}
     | dataFeedMatch {% function (d){
     	var params = {};
         for(var i = 0; i < d[0][1].length; i++){
-        	params[d[0][1][i][2][0]] = {};
-        	params[d[0][1][i][2][0]]['operator'] = d[0][1][i][4][0];
-        	params[d[0][1][i][2][0]]['value'] = d[0][1][i][6];
+        	params[d[0][1][i][2]] = {};
+        	params[d[0][1][i][2]]['operator'] = d[0][1][i][4][0];
+        	params[d[0][1][i][2]]['value'] = d[0][1][i][6];
         }
     	return ['datafeed', params]
     	}
@@ -87,6 +91,6 @@ float ->
 value -> AS {% id %}
 int -> [0-9]:+        {% function(d) {return d[0].join(""); } %}
 string -> "\"" [\w\s]:+ "\""        {% function(d) {return d[1].join("").trim(); } %}
-valueInDF -> "\"" [\w\[\]\.\,\s\:]:+ "\""        {% function(d) {return d[1].join("").trim(); } %}
-valueInIO-> [\w ]:+       {% function(d) {return d[0].join("").trim(); } %}
+valueInDF -> "\"" [\w\[\]\.\, \:\-+_]:+ "\""        {% function(d) {return d[1].join("").trim(); } %}
+valueInIO-> [\w\s+\-\/=]:+       {% function(d) {return d[0].join("").trim(); } %}
 _ -> [\s]:*     {% function(d) {return null; } %}
