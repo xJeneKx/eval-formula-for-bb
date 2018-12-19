@@ -1,12 +1,35 @@
 @{%
 	var BigNumber = require('bignumber.js');
+	var moo = require("moo");
+
+    var lexer = moo.compile({
+      WS: /[ ]+/,
+      number: /[0-9]+/,
+      string: /"[\w\[\]\.\, \:\-+_]+"/,
+      op: ["+", "-", "/", "*", '&&', '||', '^'],
+      name: ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'min', 'max', 'pi', 'e', 'sqrt', 'ln', 'ceil', 'floor', 'round', 'input', 'output','data_feed'],
+      l: '(',
+      r: ')',
+      sl:'[',
+      sr: ']',
+      comma: ',',
+      dot: '.',
+      conditionals: ["==", ">=", "<=", "!=", ">", "<", "="],
+      dfParams: ['oracles', 'feed_name', 'mci', 'feed_value', 'ifseveral', 'ifnone'],
+      ioParams: ['address', 'amount', 'asset'],
+      quote: '"',
+      ternary: ['?', ':'],
+      ioParamValue: /[a-zA-Z\ \-\/=]+/
+    });
 %}
 
-main -> _ condition _ {% function(d) {return d[1]; } %}
+@lexer lexer
 
-dataFeedMatch -> ("data_feed[" ( [\,]:* paramName ("!="|">="|"<="|">"|"<"|"=") valueInDF ):* "]") {% id %}
+main -> sCondition {% id %}
+
+dataFeedMatch -> ("data_feed" "[" ( [\, ]:* %dfParams ("!="|">="|"<="|">"|"<"|"=") valueInDF ):* "]") {% id %}
 paramName -> _ "oracles"|"feed_name"|"mci"|"feed_value"|"ifseveral"|"ifnone" _ {% function(d) {return d[1]; } %}
-valueInDF -> _ "\"" [\w\[\]\.\, \:\-+_]:+ "\"" _        {% function(d) {return d[2].join("").trim(); } %}
+valueInDF -> _ %string _       {% function(d) {return d[1].value} %}
 
 inputAndOutputMatch -> (("input"|"output") "[" ( [\,]:* _ ("address"|"amount"|"asset") _ ("!="|">="|"<="|">"|"<"|"=") _ valueInIO _):* "]") {% id %}
 
@@ -35,8 +58,7 @@ condition -> AS _ conditional _ AS {% function(d) {return ['condition', d[2], d[
 condition2 -> AS _ conditional _ AS {% function(d) {return ['condition', d[2], d[0], d[4]];}%}
 	| AS {% id %}
 
-conditionals -> "==" | ">=" | "<=" | "!=" | ">" | "<"
-conditional -> conditionals {% function(d) { return d[0][0] } %}
+conditional -> _ %conditionals _ {% function(d) { return d[1].value } %}
 
 P -> "(" _ condition _ ")" {% function(d) {return d[2]; } %}
     | N      {% id %}
@@ -65,17 +87,17 @@ N -> float          {% id %}
     | "e"           {% function(d) {return ['e']; } %}
     | "sqrt" _ P    {% function(d) {return ['sqrt', d[2]]; } %}
     | "ln" _ P      {% function(d) {return ['log', d[2]]; }  %}
-    | "min(" _ ([0-9\,\s]:+) _ ")"  {% function(d) {var params = d[2][0].join('').split(','); return ['min', params]; }  %}
-    | "max(" _ ([0-9\,\s]:+) _ ")"  {% function(d) {var params = d[2][0].join('').split(','); return ['max', params]; }  %}
+    | "min" _ "(" (_ AS _ ",":*):+ _ ")"  {% function(d) {var params = d[3].map(function(v){return v[1]});return ['min', params]; }  %}
+    | "max" _ "(" (_ AS _ ",":*):+ _ ")"  {% function(d) {var params = d[3].map(function(v){return v[1]});return ['max', params]; }  %}
     | "ceil" _ P    {% function(d) {return ['ceil', d[2]]; } %}
     | "floor" _ P    {% function(d) {return ['floor', d[2]]; } %}
     | "round" _ P    {% function(d) {return ['round', d[2]]; } %}
     | dataFeedMatch {% function (d){
     	var params = {};
-        for(var i = 0; i < d[0][1].length; i++){
-        	params[d[0][1][i][1]] = {};
-        	params[d[0][1][i][1]]['operator'] = d[0][1][i][2][0];
-        	params[d[0][1][i][1]]['value'] = d[0][1][i][3];
+        for(var i = 0; i < d[0][2].length; i++){
+        	params[d[0][2][i][1].value] = {};
+        	params[d[0][2][i][1].value]['operator'] = d[0][2][i][2][0].value;
+        	params[d[0][2][i][1].value]['value'] = d[0][2][i][3].substr(1).substr(0, d[0][2][i][3].length - 2);
         }
     	return ['data_feed', params]
     	}
@@ -83,20 +105,26 @@ N -> float          {% id %}
     | inputAndOutputMatch "." ("asset"|"amount"|"address") {% function (d){
     	var params = {};
         for(var i = 0; i < d[0][2].length; i++){
-        	params[d[0][2][i][2][0]] = {};
-        	params[d[0][2][i][2][0]]['operator'] = d[0][2][i][4][0];
-        	params[d[0][2][i][2][0]]['value'] = d[0][2][i][6];
+        	params[d[0][2][i][2][0].value] = {};
+        	params[d[0][2][i][2][0].value]['operator'] = d[0][2][i][4][0].value;
+        	params[d[0][2][i][2][0].value]['value'] = d[0][2][i][6];
         }
-    	return [d[0][0][0], params, d[2][0]]
+    	return [d[0][0][0].value, params, d[2][0].value]
     	}
     %}
 
-float ->
-      int "." int   {% function(d) {return new BigNumber(d[0] + d[1] + d[2])} %}
-	| int           {% function(d) {return new BigNumber(d[0])} %}
+float -> "-":* %number ("." %number):*         {% function(d,l, reject) {
+var number = d[0][0] ? '-' + d[1] : d[1];
+if(d[2][0] && d[2][0][0].type === 'dot'){
+	if(d[2].length > 1 || d[2][0][1].type !== 'number'){
+		return reject;
+	}else{
+		number = number + '.' + d[2][0][1].value;
+	}
+}
+return new BigNumber(number)} %}
 
 value -> AS {% id %}
-int -> [-0-9]:+        {% function(d) {return d[0].join(""); } %}
-string -> "\"" [\w\s]:+ "\""        {% function(d) {return d[1].join("").trim(); } %}
+string -> %string        {% function(d) {return d[0].value; } %}
 valueInIO-> [\w\s+\-\/=]:+       {% function(d) {return d[0].join("").trim(); } %}
-_ -> [\s]:*     {% function(d) {return null; } %}
+_ -> %WS:*     {% function(d) {return null; } %}

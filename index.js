@@ -5,7 +5,7 @@ var async = require('async');
 var ValidationUtils = require("byteballcore/validation_utils.js");
 var constants = require('byteballcore/constants');
 
-BigNumber.config({EXPONENTIAL_AT: [-1e+9, 1e9], POW_PRECISION: 100, RANGE: 100});
+BigNumber.config({EXPONENTIAL_AT: [-30, 30], POW_PRECISION: 100, RANGE: 100});
 
 exports.validate = function (formula, complexity, callback) {
 	complexity++;
