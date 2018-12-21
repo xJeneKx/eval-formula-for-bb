@@ -1,6 +1,6 @@
 {
   "name": "eval-formula-for-bb",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "dependencies": {
     "async": "^2.6.1",
     "bignumber.js": "^8.0.1",

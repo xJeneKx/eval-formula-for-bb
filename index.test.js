@@ -347,6 +347,12 @@ test('round 2.5', t => {
 	});
 });
 
+test("0.1 + 0.2 == 0.3", t => {
+	evalFormula("0.1 + 0.2 == 0.3", 0, 0, 0, 0, res => {
+		t.deepEqual(res, true);
+	});
+});
+
 test('formula - amount !=', t => {
 	evalFormula('input[asset=base].amount != output[asset=base, address=GFK3RDAPQLLNCMQEVGGD2KCPZTLSG3HN].amount', 0, objValidationState.arrAugmentedMessages, objValidationState, 0, res => {
 		t.deepEqual(res, true);
@@ -354,7 +360,7 @@ test('formula - amount !=', t => {
 });
 
 test('formula - amount = 1', t => {
-	evalFormula("output[asset=base, amount=1].amount == 1", 0, objValidationState.arrAugmentedMessages, objValidationState, 0, res => {
+	evalFormula("output[asset = base, amount=1].amount == 1", 0, objValidationState.arrAugmentedMessages, objValidationState, 0, res => {
 		t.deepEqual(res, true);
 	});
 });
@@ -366,6 +372,17 @@ test('formula - datafeed', t => {
 		cb(rows);
 	};
 	evalFormula("data_feed[oracles=\"MXMEKGN37H5QO2AWHT7XRG6LHJVVTAWU\", feed_name=\"test\", ifseveral=\"last\"] == 10", db, objValidationState.arrAugmentedMessages, objValidationState, 0, res => {
+		t.deepEqual(res, true);
+	});
+});
+
+test('formula - datafeed2', t => {
+	let db = {};
+	db.query = function (query, params, cb) {
+		let rows = [{value: null, int_value: 10}];
+		cb(rows);
+	};
+	evalFormula("data_feed[oracles=\"MXMEKGN37H5QO2AWHT7XRG6LHJVVTAWU:this address\", feed_name=\"test\", ifseveral=\"last\", mci>10] == 10", db, objValidationState.arrAugmentedMessages, objValidationState, 0, res => {
 		t.deepEqual(res, true);
 	});
 });

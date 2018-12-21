@@ -11,62 +11,26 @@ function id(x) { return x[0]; }
       number: /[0-9]+/,
       string: /"[\w\[\]\.\, \:\-+_]+"/,
       op: ["+", "-", "/", "*", '&&', '||', '^'],
-      name: ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'min', 'max', 'pi', 'e', 'sqrt', 'ln', 'ceil', 'floor', 'round', 'input', 'output','data_feed'],
+      name: ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'min', 'max', 'pi', 'e', 'sqrt', 'ln', 'ceil', 'floor', 'round'],
       l: '(',
       r: ')',
       sl:'[',
       sr: ']',
-      comma: ',',
-      dot: '.',
+      io: ['input', 'output'],
+      data_feed: 'data_feed',
       conditionals: ["==", ">=", "<=", "!=", ">", "<", "="],
-      dfParams: ['oracles', 'feed_name', 'mci', 'feed_value', 'ifseveral', 'ifnone'],
-      ioParams: ['address', 'amount', 'asset'],
+      dfParamsName: ['oracles', 'feed_name', 'mci', 'feed_value', 'ifseveral', 'ifnone'],
+      ioParamsName: ['address', 'amount', 'asset'],
       quote: '"',
       ternary: ['?', ':'],
-      ioParamValue: /[a-zA-Z\ \-\/=]+/
+      ioParamValue: /[\w\ \-\/=+]+/,
+      comma: ',',
+      dot: '.',
     });
 var grammar = {
     Lexer: lexer,
     ParserRules: [
     {"name": "main", "symbols": ["sCondition"], "postprocess": id},
-    {"name": "dataFeedMatch$subexpression$1$ebnf$1", "symbols": []},
-    {"name": "dataFeedMatch$subexpression$1$ebnf$1$subexpression$1$ebnf$1", "symbols": []},
-    {"name": "dataFeedMatch$subexpression$1$ebnf$1$subexpression$1$ebnf$1", "symbols": ["dataFeedMatch$subexpression$1$ebnf$1$subexpression$1$ebnf$1", /[\, ]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "dataFeedMatch$subexpression$1$ebnf$1$subexpression$1$subexpression$1", "symbols": [{"literal":"!="}]},
-    {"name": "dataFeedMatch$subexpression$1$ebnf$1$subexpression$1$subexpression$1", "symbols": [{"literal":">="}]},
-    {"name": "dataFeedMatch$subexpression$1$ebnf$1$subexpression$1$subexpression$1", "symbols": [{"literal":"<="}]},
-    {"name": "dataFeedMatch$subexpression$1$ebnf$1$subexpression$1$subexpression$1", "symbols": [{"literal":">"}]},
-    {"name": "dataFeedMatch$subexpression$1$ebnf$1$subexpression$1$subexpression$1", "symbols": [{"literal":"<"}]},
-    {"name": "dataFeedMatch$subexpression$1$ebnf$1$subexpression$1$subexpression$1", "symbols": [{"literal":"="}]},
-    {"name": "dataFeedMatch$subexpression$1$ebnf$1$subexpression$1", "symbols": ["dataFeedMatch$subexpression$1$ebnf$1$subexpression$1$ebnf$1", (lexer.has("dfParams") ? {type: "dfParams"} : dfParams), "dataFeedMatch$subexpression$1$ebnf$1$subexpression$1$subexpression$1", "valueInDF"]},
-    {"name": "dataFeedMatch$subexpression$1$ebnf$1", "symbols": ["dataFeedMatch$subexpression$1$ebnf$1", "dataFeedMatch$subexpression$1$ebnf$1$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "dataFeedMatch$subexpression$1", "symbols": [{"literal":"data_feed"}, {"literal":"["}, "dataFeedMatch$subexpression$1$ebnf$1", {"literal":"]"}]},
-    {"name": "dataFeedMatch", "symbols": ["dataFeedMatch$subexpression$1"], "postprocess": id},
-    {"name": "paramName", "symbols": ["_", {"literal":"oracles"}]},
-    {"name": "paramName", "symbols": [{"literal":"feed_name"}]},
-    {"name": "paramName", "symbols": [{"literal":"mci"}]},
-    {"name": "paramName", "symbols": [{"literal":"feed_value"}]},
-    {"name": "paramName", "symbols": [{"literal":"ifseveral"}]},
-    {"name": "paramName", "symbols": [{"literal":"ifnone"}, "_"], "postprocess": function(d) {return d[1]; }},
-    {"name": "valueInDF", "symbols": ["_", (lexer.has("string") ? {type: "string"} : string), "_"], "postprocess": function(d) {return d[1].value}},
-    {"name": "inputAndOutputMatch$subexpression$1$subexpression$1", "symbols": [{"literal":"input"}]},
-    {"name": "inputAndOutputMatch$subexpression$1$subexpression$1", "symbols": [{"literal":"output"}]},
-    {"name": "inputAndOutputMatch$subexpression$1$ebnf$1", "symbols": []},
-    {"name": "inputAndOutputMatch$subexpression$1$ebnf$1$subexpression$1$ebnf$1", "symbols": []},
-    {"name": "inputAndOutputMatch$subexpression$1$ebnf$1$subexpression$1$ebnf$1", "symbols": ["inputAndOutputMatch$subexpression$1$ebnf$1$subexpression$1$ebnf$1", /[\,]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "inputAndOutputMatch$subexpression$1$ebnf$1$subexpression$1$subexpression$1", "symbols": [{"literal":"address"}]},
-    {"name": "inputAndOutputMatch$subexpression$1$ebnf$1$subexpression$1$subexpression$1", "symbols": [{"literal":"amount"}]},
-    {"name": "inputAndOutputMatch$subexpression$1$ebnf$1$subexpression$1$subexpression$1", "symbols": [{"literal":"asset"}]},
-    {"name": "inputAndOutputMatch$subexpression$1$ebnf$1$subexpression$1$subexpression$2", "symbols": [{"literal":"!="}]},
-    {"name": "inputAndOutputMatch$subexpression$1$ebnf$1$subexpression$1$subexpression$2", "symbols": [{"literal":">="}]},
-    {"name": "inputAndOutputMatch$subexpression$1$ebnf$1$subexpression$1$subexpression$2", "symbols": [{"literal":"<="}]},
-    {"name": "inputAndOutputMatch$subexpression$1$ebnf$1$subexpression$1$subexpression$2", "symbols": [{"literal":">"}]},
-    {"name": "inputAndOutputMatch$subexpression$1$ebnf$1$subexpression$1$subexpression$2", "symbols": [{"literal":"<"}]},
-    {"name": "inputAndOutputMatch$subexpression$1$ebnf$1$subexpression$1$subexpression$2", "symbols": [{"literal":"="}]},
-    {"name": "inputAndOutputMatch$subexpression$1$ebnf$1$subexpression$1", "symbols": ["inputAndOutputMatch$subexpression$1$ebnf$1$subexpression$1$ebnf$1", "_", "inputAndOutputMatch$subexpression$1$ebnf$1$subexpression$1$subexpression$1", "_", "inputAndOutputMatch$subexpression$1$ebnf$1$subexpression$1$subexpression$2", "_", "valueInIO", "_"]},
-    {"name": "inputAndOutputMatch$subexpression$1$ebnf$1", "symbols": ["inputAndOutputMatch$subexpression$1$ebnf$1", "inputAndOutputMatch$subexpression$1$ebnf$1$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "inputAndOutputMatch$subexpression$1", "symbols": ["inputAndOutputMatch$subexpression$1$subexpression$1", {"literal":"["}, "inputAndOutputMatch$subexpression$1$ebnf$1", {"literal":"]"}]},
-    {"name": "inputAndOutputMatch", "symbols": ["inputAndOutputMatch$subexpression$1"], "postprocess": id},
     {"name": "ternary", "symbols": ["sCondition", {"literal":"?"}, "sAS", {"literal":":"}, "sAS"], "postprocess": function(d) {return ['ternary', d[0], d[2], d[4]];}},
     {"name": "sCondition", "symbols": ["_", "condition", "_"], "postprocess": function(d) {return d[1];}},
     {"name": "sAS", "symbols": ["_", "AS", "_"], "postprocess": function(d) {return d[1];}},
@@ -86,7 +50,7 @@ var grammar = {
     {"name": "condition2", "symbols": ["AS", "_", "conditional", "_", "AS"], "postprocess": function(d) {return ['condition', d[2], d[0], d[4]];}},
     {"name": "condition2", "symbols": ["AS"], "postprocess": id},
     {"name": "conditional", "symbols": ["_", (lexer.has("conditionals") ? {type: "conditionals"} : conditionals), "_"], "postprocess": function(d) { return d[1].value }},
-    {"name": "P", "symbols": [{"literal":"("}, "_", "condition", "_", {"literal":")"}], "postprocess": function(d) {return d[2]; }},
+    {"name": "P", "symbols": [(lexer.has("l") ? {type: "l"} : l), "_", "condition", "_", (lexer.has("r") ? {type: "r"} : r)], "postprocess": function(d) {return d[2]; }},
     {"name": "P", "symbols": ["N"], "postprocess": id},
     {"name": "E", "symbols": ["P", "_", {"literal":"^"}, "_", "E"], "postprocess": function(d) {return ['^', d[0], d[4]]; }},
     {"name": "E", "symbols": ["P"], "postprocess": id},
@@ -115,7 +79,7 @@ var grammar = {
     {"name": "N$ebnf$1$subexpression$2$ebnf$1", "symbols": ["N$ebnf$1$subexpression$2$ebnf$1", {"literal":","}], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "N$ebnf$1$subexpression$2", "symbols": ["_", "AS", "_", "N$ebnf$1$subexpression$2$ebnf$1"]},
     {"name": "N$ebnf$1", "symbols": ["N$ebnf$1", "N$ebnf$1$subexpression$2"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "N", "symbols": [{"literal":"min"}, "_", {"literal":"("}, "N$ebnf$1", "_", {"literal":")"}], "postprocess": function(d) {var params = d[3].map(function(v){return v[1]});return ['min', params]; }},
+    {"name": "N", "symbols": [{"literal":"min"}, "_", (lexer.has("l") ? {type: "l"} : l), "N$ebnf$1", "_", (lexer.has("r") ? {type: "r"} : r)], "postprocess": function(d) {var params = d[3].map(function(v){return v[1]});return ['min', params]; }},
     {"name": "N$ebnf$2$subexpression$1$ebnf$1", "symbols": []},
     {"name": "N$ebnf$2$subexpression$1$ebnf$1", "symbols": ["N$ebnf$2$subexpression$1$ebnf$1", {"literal":","}], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "N$ebnf$2$subexpression$1", "symbols": ["_", "AS", "_", "N$ebnf$2$subexpression$1$ebnf$1"]},
@@ -124,31 +88,56 @@ var grammar = {
     {"name": "N$ebnf$2$subexpression$2$ebnf$1", "symbols": ["N$ebnf$2$subexpression$2$ebnf$1", {"literal":","}], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "N$ebnf$2$subexpression$2", "symbols": ["_", "AS", "_", "N$ebnf$2$subexpression$2$ebnf$1"]},
     {"name": "N$ebnf$2", "symbols": ["N$ebnf$2", "N$ebnf$2$subexpression$2"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "N", "symbols": [{"literal":"max"}, "_", {"literal":"("}, "N$ebnf$2", "_", {"literal":")"}], "postprocess": function(d) {var params = d[3].map(function(v){return v[1]});return ['max', params]; }},
+    {"name": "N", "symbols": [{"literal":"max"}, "_", (lexer.has("l") ? {type: "l"} : l), "N$ebnf$2", "_", (lexer.has("r") ? {type: "r"} : r)], "postprocess": function(d) {var params = d[3].map(function(v){return v[1]});return ['max', params]; }},
     {"name": "N", "symbols": [{"literal":"ceil"}, "_", "P"], "postprocess": function(d) {return ['ceil', d[2]]; }},
     {"name": "N", "symbols": [{"literal":"floor"}, "_", "P"], "postprocess": function(d) {return ['floor', d[2]]; }},
     {"name": "N", "symbols": [{"literal":"round"}, "_", "P"], "postprocess": function(d) {return ['round', d[2]]; }},
-    {"name": "N", "symbols": ["dataFeedMatch"], "postprocess":  function (d){
+    {"name": "N$subexpression$1$ebnf$1", "symbols": []},
+    {"name": "N$subexpression$1$ebnf$1$subexpression$1$ebnf$1", "symbols": []},
+    {"name": "N$subexpression$1$ebnf$1$subexpression$1$ebnf$1", "symbols": ["N$subexpression$1$ebnf$1$subexpression$1$ebnf$1", /[\, ]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "N$subexpression$1$ebnf$1$subexpression$1$subexpression$1", "symbols": [(lexer.has("string") ? {type: "string"} : string)]},
+    {"name": "N$subexpression$1$ebnf$1$subexpression$1$subexpression$1", "symbols": ["float"]},
+    {"name": "N$subexpression$1$ebnf$1$subexpression$1", "symbols": ["N$subexpression$1$ebnf$1$subexpression$1$ebnf$1", "_", (lexer.has("dfParamsName") ? {type: "dfParamsName"} : dfParamsName), "_", (lexer.has("conditionals") ? {type: "conditionals"} : conditionals), "_", "N$subexpression$1$ebnf$1$subexpression$1$subexpression$1", "_"]},
+    {"name": "N$subexpression$1$ebnf$1", "symbols": ["N$subexpression$1$ebnf$1", "N$subexpression$1$ebnf$1$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "N$subexpression$1", "symbols": [(lexer.has("data_feed") ? {type: "data_feed"} : data_feed), (lexer.has("sl") ? {type: "sl"} : sl), "N$subexpression$1$ebnf$1", (lexer.has("sr") ? {type: "sr"} : sr)]},
+    {"name": "N", "symbols": ["N$subexpression$1"], "postprocess":  function (d){
         var params = {};
                 for(var i = 0; i < d[0][2].length; i++){
-                	params[d[0][2][i][1].value] = {};
-                	params[d[0][2][i][1].value]['operator'] = d[0][2][i][2][0].value;
-                	params[d[0][2][i][1].value]['value'] = d[0][2][i][3].substr(1).substr(0, d[0][2][i][3].length - 2);
+                	params[d[0][2][i][2].value] = {};
+                	params[d[0][2][i][2].value]['operator'] = d[0][2][i][4].value;
+                	if(BigNumber.isBigNumber(d[0][2][i][6][0])){
+                		params[d[0][2][i][2].value]['value'] = d[0][2][i][6][0].toString();
+                	}else{
+                		params[d[0][2][i][2].value]['value'] = d[0][2][i][6][0].value.substr(1).substr(0, d[0][2][i][6][0].value.length - 2);
+                	}
                 }
         return ['data_feed', params]
         }
             },
-    {"name": "N$subexpression$1", "symbols": [{"literal":"asset"}]},
-    {"name": "N$subexpression$1", "symbols": [{"literal":"amount"}]},
-    {"name": "N$subexpression$1", "symbols": [{"literal":"address"}]},
-    {"name": "N", "symbols": ["inputAndOutputMatch", {"literal":"."}, "N$subexpression$1"], "postprocess":  function (d){
+    {"name": "N$subexpression$2$ebnf$1", "symbols": []},
+    {"name": "N$subexpression$2$ebnf$1$subexpression$1$ebnf$1", "symbols": []},
+    {"name": "N$subexpression$2$ebnf$1$subexpression$1$ebnf$1", "symbols": ["N$subexpression$2$ebnf$1$subexpression$1$ebnf$1", /[\, ]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "N$subexpression$2$ebnf$1$subexpression$1$subexpression$1", "symbols": [(lexer.has("ioParamValue") ? {type: "ioParamValue"} : ioParamValue)]},
+    {"name": "N$subexpression$2$ebnf$1$subexpression$1$subexpression$1", "symbols": ["float"]},
+    {"name": "N$subexpression$2$ebnf$1$subexpression$1", "symbols": ["N$subexpression$2$ebnf$1$subexpression$1$ebnf$1", "_", (lexer.has("ioParamsName") ? {type: "ioParamsName"} : ioParamsName), "_", (lexer.has("conditionals") ? {type: "conditionals"} : conditionals), "_", "N$subexpression$2$ebnf$1$subexpression$1$subexpression$1", "_"]},
+    {"name": "N$subexpression$2$ebnf$1", "symbols": ["N$subexpression$2$ebnf$1", "N$subexpression$2$ebnf$1$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "N$subexpression$2", "symbols": [(lexer.has("io") ? {type: "io"} : io), (lexer.has("sl") ? {type: "sl"} : sl), "N$subexpression$2$ebnf$1", {"literal":"]"}]},
+    {"name": "N$subexpression$3", "symbols": [{"literal":"asset"}]},
+    {"name": "N$subexpression$3", "symbols": [{"literal":"amount"}]},
+    {"name": "N$subexpression$3", "symbols": [{"literal":"address"}]},
+    {"name": "N", "symbols": ["N$subexpression$2", {"literal":"."}, "N$subexpression$3"], "postprocess":  function (d){
         var params = {};
                 for(var i = 0; i < d[0][2].length; i++){
-                	params[d[0][2][i][2][0].value] = {};
-                	params[d[0][2][i][2][0].value]['operator'] = d[0][2][i][4][0].value;
-                	params[d[0][2][i][2][0].value]['value'] = d[0][2][i][6];
+                	params[d[0][2][i][2].value] = {};
+                	params[d[0][2][i][2].value]['operator'] = d[0][2][i][4].value;
+                	if(BigNumber.isBigNumber(d[0][2][i][6][0])){
+                		params[d[0][2][i][2].value]['value'] = d[0][2][i][6][0].toString();
+        
+                	}else{
+                		params[d[0][2][i][2].value]['value'] = d[0][2][i][6][0].value;
+                	}
                 }
-        return [d[0][0][0].value, params, d[2][0].value]
+        return [d[0][0].value, params, d[2][0].value]
         }
             },
     {"name": "float$ebnf$1", "symbols": []},
@@ -168,9 +157,6 @@ var grammar = {
         return new BigNumber(number)} },
     {"name": "value", "symbols": ["AS"], "postprocess": id},
     {"name": "string", "symbols": [(lexer.has("string") ? {type: "string"} : string)], "postprocess": function(d) {return d[0].value; }},
-    {"name": "valueInIO$ebnf$1", "symbols": [/[\w\s+\-\/=]/]},
-    {"name": "valueInIO$ebnf$1", "symbols": ["valueInIO$ebnf$1", /[\w\s+\-\/=]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "valueInIO", "symbols": ["valueInIO$ebnf$1"], "postprocess": function(d) {return d[0].join("").trim(); }},
     {"name": "_$ebnf$1", "symbols": []},
     {"name": "_$ebnf$1", "symbols": ["_$ebnf$1", (lexer.has("WS") ? {type: "WS"} : WS)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "_", "symbols": ["_$ebnf$1"], "postprocess": function(d) {return null; }}
