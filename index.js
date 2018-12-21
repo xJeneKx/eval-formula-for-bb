@@ -656,7 +656,11 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 						cb2(null, prevV);
 					} else {
 						evaluate(arr2, function (res) {
-							prevV = prevV && res;
+							if(typeof res === 'boolean'){
+								prevV = prevV && res;
+							}else {
+								prevV = prevV && !(res.eq(0));
+							}
 							cb2(null, prevV);
 						});
 					}
@@ -672,7 +676,11 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 						cb2(null, prevV);
 					} else {
 						evaluate(arr2, function (res) {
-							prevV = prevV || res;
+							if(typeof res === 'boolean'){
+								prevV = prevV || res;
+							}else {
+								prevV = prevV || !(res.eq(0));
+							}
 							cb2(null, prevV);
 						});
 					}

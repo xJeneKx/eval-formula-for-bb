@@ -25,6 +25,7 @@ var objValidationState = {
 	
 };
 
+
 test('1 + 1', t => {
 	evalFormula("1 + 1", 0, 0, 0, 0, res => {
 		t.deepEqual(res.eq(2), true);
@@ -382,7 +383,7 @@ test('formula - datafeed2', t => {
 		let rows = [{value: null, int_value: 10}];
 		cb(rows);
 	};
-	evalFormula("data_feed[oracles=\"MXMEKGN37H5QO2AWHT7XRG6LHJVVTAWU:this address\", feed_name=\"test\", ifseveral=\"last\", mci>10] == 10", db, objValidationState.arrAugmentedMessages, objValidationState, 0, res => {
+	evalFormula("data_feed[oracles=\"MXMEKGN37H5QO2AWHT7XRG6LHJVVTAWU:this address\", feed_name=\"test\", ifseveral=\"last\", mci > 10] == 10", db, objValidationState.arrAugmentedMessages, objValidationState, 0, res => {
 		t.deepEqual(res, true);
 	});
 });
