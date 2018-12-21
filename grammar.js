@@ -108,7 +108,7 @@ var grammar = {
                 	if(BigNumber.isBigNumber(d[0][2][i][6][0])){
                 		params[d[0][2][i][2].value]['value'] = d[0][2][i][6][0].toString();
                 	}else{
-                		params[d[0][2][i][2].value]['value'] = d[0][2][i][6][0].value.substr(1).substr(0, d[0][2][i][6][0].value.length - 2);
+                		params[d[0][2][i][2].value]['value'] = d[0][2][i][6][0].value.slice(1, -1);
                 	}
                 }
         return ['data_feed', params]
