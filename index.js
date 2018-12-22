@@ -836,7 +836,7 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 						relation = params.feed_value.operator;
 					}
 					if (params.mci) {
-						min_mci = params.mci.value;
+						min_mci = params.mci.value.toString();
 						mci_relation = params.mci.operator;
 					}
 					var ifseveral = 'ORDER BY main_chain_index DESC';
@@ -851,22 +851,16 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 					}
 					var ifnone = false;
 					if (params.ifnone && params.ifnone.value !== 'abort') {
-						var isNumber2 = /^-?\d+\.?\d*$/.test(params.ifnone.value);
-						if (isNumber2) {
-							ifnone = new BigNumber(params.ifnone.value);
-						} else {
-							ifnone = params.ifnone.value;
-						}
+						ifnone = params.ifnone.value;
 					}
 					
 					var value_condition = '';
 					var queryParams = [arrAddresses, feed_name];
 					if (value) {
-						var isNumber = /^-?\d+\.?\d*$/.test(value);
-						if (isNumber) {
+						if (BigNumber.isBigNumber(value)) {
 							var bForceNumericComparison = (['>', '>=', '<', '<='].indexOf(relation) >= 0);
 							var plus_0 = bForceNumericComparison ? '+0' : '';
-							value_condition = '(value' + plus_0 + relation + value + ' OR int_value' + relation + value + ')';
+							value_condition = '(value' + plus_0 + relation + value.toString() + ' OR int_value' + relation + value.toString() + ')';
 						}
 						else {
 							value_condition = 'value' + relation + '?';
@@ -951,7 +945,6 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 						});
 					}
 					if (objParams.amount) {
-						objParams.amount.value = new BigNumber(objParams.amount.value);
 						puts = puts.filter(function (put) {
 							put.amount = new BigNumber(put.amount);
 							if (objParams.amount.operator === '=') {

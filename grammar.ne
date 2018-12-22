@@ -4,7 +4,7 @@
 
     var lexer = moo.compile({
       WS: /[ ]+/,
-      number: /[0-9]+/,
+      positiveInt: /[0-9]+/,
       string: /"[\w\[\]\.\, \:\-+_]+"/,
       op: ["+", "-", "/", "*", '&&', '||', '^'],
       name: ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'min', 'max', 'pi', 'e', 'sqrt', 'ln', 'ceil', 'floor', 'round'],
@@ -99,45 +99,52 @@ N -> float          {% id %}
     | "ceil" P    {% function(d) {return ['ceil', d[1]]; } %}
     | "floor" P    {% function(d) {return ['floor', d[1]]; } %}
     | "round" P    {% function(d) {return ['round', d[1]]; } %}
-    | (%data_feed %sl ( [\, ]:* %dfParamsName %conditionals (%string|float)):* %sr) {% function (d){
+    | (%data_feed %sl ( %comma:* %dfParamsName %conditionals (%string|float)):* %sr) {% function (d){
     	var params = {};
         for(var i = 0; i < d[0][2].length; i++){
-        	params[d[0][2][i][1].value] = {};
-        	params[d[0][2][i][1].value]['operator'] = d[0][2][i][2].value;
-        	if(BigNumber.isBigNumber(d[0][2][i][3][0])){
-        		params[d[0][2][i][1].value]['value'] = d[0][2][i][3][0].toString();
+        	var name = d[0][2][i][1].value;
+        	var operator = d[0][2][i][2].value
+        	var value = d[0][2][i][3][0];
+
+        	params[name] = {};
+        	params[name]['operator'] = operator;
+        	if(BigNumber.isBigNumber(value)){
+        		params[name]['value'] = value;
         	}else{
-        		params[d[0][2][i][1].value]['value'] = d[0][2][i][3][0].value.slice(1, -1);
+        		params[name]['value'] = value.value.slice(1, -1);
         	}
         }
     	return ['data_feed', params]
     	}
     %}
-    | (%io %sl ( [\, ]:* %ioParamsName %conditionals (%ioParamValue|float)):* "]" ) "." ("asset"|"amount"|"address") {% function (d){
+    | (%io %sl ( %comma:* %ioParamsName %conditionals (%ioParamValue|float)):* "]" ) "." %ioParamsName {% function (d){
     	var params = {};
         for(var i = 0; i < d[0][2].length; i++){
-        	params[d[0][2][i][1].value] = {};
-        	params[d[0][2][i][1].value]['operator'] = d[0][2][i][2].value;
-        	if(BigNumber.isBigNumber(d[0][2][i][3][0])){
-        		params[d[0][2][i][1].value]['value'] = d[0][2][i][3][0].toString();
+        	var name = d[0][2][i][1].value;
+            var operator = d[0][2][i][2].value
+            var value = d[0][2][i][3][0];
 
+        	params[name] = {};
+        	params[name]['operator'] = operator;
+        	if(BigNumber.isBigNumber(value)){
+        		params[name]['value'] = value;
         	}else{
-        		params[d[0][2][i][1].value]['value'] = d[0][2][i][3][0].value;
+        		params[name]['value'] = value.value;
         	}
         }
-    	return [d[0][0].value, params, d[2][0].value]
+    	return [d[0][0].value, params, d[2].value]
     	}
     %}
 
-float -> "-":* %number ("." %number):*         {% function(d,l, reject) {
-var number = d[0][0] ? '-' + d[1] : d[1];
-if(d[2][0] && d[2][0][0].type === 'dot'){
-	if(d[2].length > 1 || d[2][0][1].type !== 'number'){
-		return reject;
-	}else{
-		number = number + '.' + d[2][0][1].value;
+float -> "-":* %positiveInt ("." %positiveInt):*         {% function(d,l, reject) {
+	var number = d[0][0] ? '-' + d[1] : d[1];
+	if(d[2][0] && d[2][0][0].type === 'dot'){
+		if(d[2].length > 1){
+			return reject;
+		}else{
+			number = number + '.' + d[2][0][1].value;
+		}
 	}
-}
 return new BigNumber(number)} %}
 
 value -> AS {% id %}

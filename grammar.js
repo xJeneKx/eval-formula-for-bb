@@ -8,7 +8,7 @@ function id(x) { return x[0]; }
 
     var lexer = moo.compile({
       WS: /[ ]+/,
-      number: /[0-9]+/,
+      positiveInt: /[0-9]+/,
       string: /"[\w\[\]\.\, \:\-+_]+"/,
       op: ["+", "-", "/", "*", '&&', '||', '^'],
       name: ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'min', 'max', 'pi', 'e', 'sqrt', 'ln', 'ceil', 'floor', 'round'],
@@ -106,7 +106,7 @@ var grammar = {
     {"name": "N", "symbols": [{"literal":"round"}, "P"], "postprocess": function(d) {return ['round', d[1]]; }},
     {"name": "N$subexpression$1$ebnf$1", "symbols": []},
     {"name": "N$subexpression$1$ebnf$1$subexpression$1$ebnf$1", "symbols": []},
-    {"name": "N$subexpression$1$ebnf$1$subexpression$1$ebnf$1", "symbols": ["N$subexpression$1$ebnf$1$subexpression$1$ebnf$1", /[\, ]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "N$subexpression$1$ebnf$1$subexpression$1$ebnf$1", "symbols": ["N$subexpression$1$ebnf$1$subexpression$1$ebnf$1", (lexer.has("comma") ? {type: "comma"} : comma)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "N$subexpression$1$ebnf$1$subexpression$1$subexpression$1", "symbols": [(lexer.has("string") ? {type: "string"} : string)]},
     {"name": "N$subexpression$1$ebnf$1$subexpression$1$subexpression$1", "symbols": ["float"]},
     {"name": "N$subexpression$1$ebnf$1$subexpression$1", "symbols": ["N$subexpression$1$ebnf$1$subexpression$1$ebnf$1", (lexer.has("dfParamsName") ? {type: "dfParamsName"} : dfParamsName), (lexer.has("conditionals") ? {type: "conditionals"} : conditionals), "N$subexpression$1$ebnf$1$subexpression$1$subexpression$1"]},
@@ -115,12 +115,16 @@ var grammar = {
     {"name": "N", "symbols": ["N$subexpression$1"], "postprocess":  function (d){
         var params = {};
                 for(var i = 0; i < d[0][2].length; i++){
-                	params[d[0][2][i][1].value] = {};
-                	params[d[0][2][i][1].value]['operator'] = d[0][2][i][2].value;
-                	if(BigNumber.isBigNumber(d[0][2][i][3][0])){
-                		params[d[0][2][i][1].value]['value'] = d[0][2][i][3][0].toString();
+                	var name = d[0][2][i][1].value;
+                	var operator = d[0][2][i][2].value
+                	var value = d[0][2][i][3][0];
+        
+                	params[name] = {};
+                	params[name]['operator'] = operator;
+                	if(BigNumber.isBigNumber(value)){
+                		params[name]['value'] = value;
                 	}else{
-                		params[d[0][2][i][1].value]['value'] = d[0][2][i][3][0].value.slice(1, -1);
+                		params[name]['value'] = value.value.slice(1, -1);
                 	}
                 }
         return ['data_feed', params]
@@ -128,44 +132,44 @@ var grammar = {
             },
     {"name": "N$subexpression$2$ebnf$1", "symbols": []},
     {"name": "N$subexpression$2$ebnf$1$subexpression$1$ebnf$1", "symbols": []},
-    {"name": "N$subexpression$2$ebnf$1$subexpression$1$ebnf$1", "symbols": ["N$subexpression$2$ebnf$1$subexpression$1$ebnf$1", /[\, ]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "N$subexpression$2$ebnf$1$subexpression$1$ebnf$1", "symbols": ["N$subexpression$2$ebnf$1$subexpression$1$ebnf$1", (lexer.has("comma") ? {type: "comma"} : comma)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "N$subexpression$2$ebnf$1$subexpression$1$subexpression$1", "symbols": [(lexer.has("ioParamValue") ? {type: "ioParamValue"} : ioParamValue)]},
     {"name": "N$subexpression$2$ebnf$1$subexpression$1$subexpression$1", "symbols": ["float"]},
     {"name": "N$subexpression$2$ebnf$1$subexpression$1", "symbols": ["N$subexpression$2$ebnf$1$subexpression$1$ebnf$1", (lexer.has("ioParamsName") ? {type: "ioParamsName"} : ioParamsName), (lexer.has("conditionals") ? {type: "conditionals"} : conditionals), "N$subexpression$2$ebnf$1$subexpression$1$subexpression$1"]},
     {"name": "N$subexpression$2$ebnf$1", "symbols": ["N$subexpression$2$ebnf$1", "N$subexpression$2$ebnf$1$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "N$subexpression$2", "symbols": [(lexer.has("io") ? {type: "io"} : io), (lexer.has("sl") ? {type: "sl"} : sl), "N$subexpression$2$ebnf$1", {"literal":"]"}]},
-    {"name": "N$subexpression$3", "symbols": [{"literal":"asset"}]},
-    {"name": "N$subexpression$3", "symbols": [{"literal":"amount"}]},
-    {"name": "N$subexpression$3", "symbols": [{"literal":"address"}]},
-    {"name": "N", "symbols": ["N$subexpression$2", {"literal":"."}, "N$subexpression$3"], "postprocess":  function (d){
+    {"name": "N", "symbols": ["N$subexpression$2", {"literal":"."}, (lexer.has("ioParamsName") ? {type: "ioParamsName"} : ioParamsName)], "postprocess":  function (d){
         var params = {};
                 for(var i = 0; i < d[0][2].length; i++){
-                	params[d[0][2][i][1].value] = {};
-                	params[d[0][2][i][1].value]['operator'] = d[0][2][i][2].value;
-                	if(BigNumber.isBigNumber(d[0][2][i][3][0])){
-                		params[d[0][2][i][1].value]['value'] = d[0][2][i][3][0].toString();
+                	var name = d[0][2][i][1].value;
+                    var operator = d[0][2][i][2].value
+                    var value = d[0][2][i][3][0];
         
+                	params[name] = {};
+                	params[name]['operator'] = operator;
+                	if(BigNumber.isBigNumber(value)){
+                		params[name]['value'] = value;
                 	}else{
-                		params[d[0][2][i][1].value]['value'] = d[0][2][i][3][0].value;
+                		params[name]['value'] = value.value;
                 	}
                 }
-        return [d[0][0].value, params, d[2][0].value]
+        return [d[0][0].value, params, d[2].value]
         }
             },
     {"name": "float$ebnf$1", "symbols": []},
     {"name": "float$ebnf$1", "symbols": ["float$ebnf$1", {"literal":"-"}], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "float$ebnf$2", "symbols": []},
-    {"name": "float$ebnf$2$subexpression$1", "symbols": [{"literal":"."}, (lexer.has("number") ? {type: "number"} : number)]},
+    {"name": "float$ebnf$2$subexpression$1", "symbols": [{"literal":"."}, (lexer.has("positiveInt") ? {type: "positiveInt"} : positiveInt)]},
     {"name": "float$ebnf$2", "symbols": ["float$ebnf$2", "float$ebnf$2$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "float", "symbols": ["float$ebnf$1", (lexer.has("number") ? {type: "number"} : number), "float$ebnf$2"], "postprocess":  function(d,l, reject) {
-        var number = d[0][0] ? '-' + d[1] : d[1];
-        if(d[2][0] && d[2][0][0].type === 'dot'){
-        	if(d[2].length > 1 || d[2][0][1].type !== 'number'){
-        		return reject;
-        	}else{
-        		number = number + '.' + d[2][0][1].value;
+    {"name": "float", "symbols": ["float$ebnf$1", (lexer.has("positiveInt") ? {type: "positiveInt"} : positiveInt), "float$ebnf$2"], "postprocess":  function(d,l, reject) {
+        	var number = d[0][0] ? '-' + d[1] : d[1];
+        	if(d[2][0] && d[2][0][0].type === 'dot'){
+        		if(d[2].length > 1){
+        			return reject;
+        		}else{
+        			number = number + '.' + d[2][0][1].value;
+        		}
         	}
-        }
         return new BigNumber(number)} },
     {"name": "value", "symbols": ["AS"], "postprocess": id},
     {"name": "string", "symbols": [(lexer.has("string") ? {type: "string"} : string)], "postprocess": function(d) {return d[0].value; }}
