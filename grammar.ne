@@ -52,10 +52,9 @@ AND -> condition2 "&&" condition {% function(d) {return ['and', d[0], d[2]];}%}
 concat -> string "+" string {% function(d) {return ['concat', d[0], d[2]]}%}
 
 condition -> AS conditional AS {% function(d) {return ['condition', d[1], d[0], d[2]];}%}
- 			| string "==" string {% function(d) {return ['stringCondition', '==', d[0], d[2]];} %}
- 			| string "!=" string {% function(d) {return ['stringCondition', '!=', d[0], d[2]];} %}
- 			| condition "==" string {% function(d) {return ['stringCondition', '==', d[0], d[2]];} %}
- 			| condition "!=" string {% function(d) {return ['stringCondition', '!=', d[0], d[2]];} %}
+ 			| string conditional string {% function(d) {return ['stringCondition', d[1], d[0], d[2]];} %}
+ 			| AS conditional string {% function(d) {return ['stringCondition', d[1], d[0], d[2]];} %}
+ 			| string conditional AS {% function(d) {return ['stringCondition', d[1], d[0], d[2]];} %}
 			| AND {% id %}
 			| OR {% id %}
 			| AS {% id %}

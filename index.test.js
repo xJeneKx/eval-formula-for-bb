@@ -354,6 +354,42 @@ test("0.1 + 0.2 == 0.3", t => {
 	});
 });
 
+test("1 == 1", t => {
+	evalFormula("1 == 1", 0, 0, 0, 0, res => {
+		t.deepEqual(res, true);
+	});
+});
+
+test("\"1\" == \"1\"", t => {
+	evalFormula("\"1\" == \"1\"", 0, 0, 0, 0, res => {
+		t.deepEqual(res, true);
+	});
+});
+
+test("\"1\" < \"1\"", t => {
+	evalFormula("\"1\" < \"1\"", 0, 0, 0, 0, res => {
+		t.deepEqual(res, false);
+	});
+});
+
+test("1 < \"2\"", t => {
+	evalFormula("1 < \"2\"", 0, 0, 0, 0, res => {
+		t.deepEqual(res, true);
+	});
+});
+
+test("\"1\" < 2", t => {
+	evalFormula("\"1\" < 2", 0, 0, 0, 0, res => {
+		t.deepEqual(res, true);
+	});
+});
+
+test("\"bb\" > \"ba\"", t => {
+	evalFormula("\"1\" < 2", 0, 0, 0, 0, res => {
+		t.deepEqual(res, true);
+	});
+});
+
 test('formula - amount !=', t => {
 	evalFormula('input[asset=base].amount != output[asset=base, address=GFK3RDAPQLLNCMQEVGGD2KCPZTLSG3HN].amount', 0, objValidationState.arrAugmentedMessages, objValidationState, 0, res => {
 		t.deepEqual(res, true);

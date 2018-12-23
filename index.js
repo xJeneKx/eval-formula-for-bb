@@ -714,10 +714,21 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 						}
 					}, function () {
 						if (typeof val1 === 'string') {
-							if (arr[1] === '==') {
-								return cb(val1 === val2);
-							} else {
-								return cb(val1 !== val2);
+							if(val1.substr(0,1) === '"') val1 = val1.slice(1, -1);
+							if(val2.substr(0,1) === '"') val2 = val2.slice(1, -1);
+							switch (arr[1]) {
+								case '==':
+									return cb(val1 === val2);
+								case '>=':
+									return cb(val1 >= val2);
+								case '<=':
+									return cb(val1 <= val2);
+								case '!=':
+									return cb(val1 !== val2);
+								case '>':
+									return cb(val1 > val2);
+								case '<':
+									return cb(val1 < val2);
 							}
 						} else {
 							switch (arr[1]) {
@@ -763,10 +774,23 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 							});
 						}
 					}, function () {
-						if (arr[1] === '==') {
-							return cb(val1 === val2);
-						} else {
-							return cb(val1 !== val2);
+						if(BigNumber.isBigNumber(val1)) val1 = val1.toString();
+						if(BigNumber.isBigNumber(val2)) val2 = val2.toString();
+						if(val1.substr(0,1) === '"') val1 = val1.slice(1, -1);
+						if(val2.substr(0,1) === '"') val2 = val2.slice(1, -1);
+						switch (arr[1]) {
+							case '==':
+								return cb(val1 === val2);
+							case '>=':
+								return cb(val1 >= val2);
+							case '<=':
+								return cb(val1 <= val2);
+							case '!=':
+								return cb(val1 !== val2);
+							case '>':
+								return cb(val1 > val2);
+							case '<':
+								return cb(val1 < val2);
 						}
 					});
 				});
@@ -987,6 +1011,7 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 				break;
 			default:
 				if (BigNumber.isBigNumber(arr[0])) return cb(arr[0]);
+				if (BigNumber.isBigNumber(arr)) return cb(arr);
 				if (typeof arr[0] === 'boolean') return cb(arr[0]);
 				throw new Error('Incorrect formula: ' + arr);
 				break;
