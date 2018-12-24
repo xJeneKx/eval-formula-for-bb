@@ -14,7 +14,7 @@
 		sr: ']',
 		io: ['input', 'output'],
 		data_feed: 'data_feed',
-		comparisonOperators: ["==", ">=", "<=", "!=", ">", "<", "="],
+		comparisonOperator: ["==", ">=", "<=", "!=", ">", "<", "="],
 		dfParamsName: ['oracles', 'feed_name', 'mci', 'feed_value', 'ifseveral', 'ifnone'],
 		ioParamsName: ['address', 'amount', 'asset'],
 		quote: '"',
@@ -51,20 +51,20 @@ AND -> comparison2 "&&" comparison {% function(d) {return ['and', d[0], d[2]];}%
 
 concat -> string "+" string {% function(d) {return ['concat', d[0], d[2]]}%}
 
-comparison -> AS comparisonOperators AS {% function(d) {return ['comparison', d[1], d[0], d[2]];}%}
- 			| string comparisonOperators string {% function(d) {return ['stringComparison', d[1], d[0], d[2]];} %}
- 			| AS comparisonOperators string {% function(d) {return ['stringComparison', d[1], d[0], d[2]];} %}
- 			| string comparisonOperators AS {% function(d) {return ['stringComparison', d[1], d[0], d[2]];} %}
+comparison -> AS comparisonOperator AS {% function(d) {return ['comparison', d[1], d[0], d[2]];}%}
+ 			| string comparisonOperator string {% function(d) {return ['stringComparison', d[1], d[0], d[2]];} %}
+ 			| AS comparisonOperator string {% function(d) {return ['stringComparison', d[1], d[0], d[2]];} %}
+ 			| string comparisonOperator AS {% function(d) {return ['stringComparison', d[1], d[0], d[2]];} %}
 			| AND {% id %}
 			| OR {% id %}
 			| AS {% id %}
 			| ternary {% id %}
 			| concat {% id %}
 
-comparison2 -> AS comparisonOperators AS {% function(d) {return ['comparison', d[1], d[0], d[2]];}%}
+comparison2 -> AS comparisonOperator AS {% function(d) {return ['comparison', d[1], d[0], d[2]];}%}
 	| AS {% id %}
 
-comparisonOperators -> %comparisonOperators {% function(d) { return d[0].value } %}
+comparisonOperator -> %comparisonOperator {% function(d) { return d[0].value } %}
 
 P -> %l comparison %r {% function(d) {return d[1]; } %}
     | N      {% id %}
@@ -98,7 +98,7 @@ N -> float          {% id %}
     | "ceil" P    {% function(d) {return ['ceil', d[1]]; } %}
     | "floor" P    {% function(d) {return ['floor', d[1]]; } %}
     | "round" P    {% function(d) {return ['round', d[1]]; } %}
-    | (%data_feed %sl ( %comma:* %dfParamsName %comparisonOperators (%string|float)):* %sr) {% function (d){
+    | (%data_feed %sl ( %comma:* %dfParamsName %comparisonOperator (%string|float)):* %sr) {% function (d){
 		var params = {};
 		var arrParams = d[0][2];
 		for(var i = 0; i < arrParams.length; i++){
@@ -117,7 +117,7 @@ N -> float          {% id %}
 		return ['data_feed', params]
 		}
 	%}
-    | (%io %sl ( %comma:* %ioParamsName %comparisonOperators (%ioParamValue|float)):* "]" ) "." %ioParamsName {% function (d){
+    | (%io %sl ( %comma:* %ioParamsName %comparisonOperator (%ioParamValue|float)):* "]" ) "." %ioParamsName {% function (d){
 		var params = {};
 		var arrParams = d[0][2];
 		for(var i = 0; i < arrParams.length; i++){
