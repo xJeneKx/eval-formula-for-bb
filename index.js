@@ -222,7 +222,7 @@ exports.validate = function (formula, complexity, callback) {
 					cb(true);
 				});
 				break;
-			case 'condition':
+			case 'comparison':
 				async.eachSeries([arr[2]], function (arr2, cb2) {
 					if (BigNumber.isBigNumber(arr2)) {
 						cb2();
@@ -245,7 +245,7 @@ exports.validate = function (formula, complexity, callback) {
 					});
 				});
 				break;
-			case 'stringCondition':
+			case 'stringComparison':
 				async.eachSeries([arr[2]], function (arr2, cb2) {
 					if (typeof arr2 === 'string') {
 						cb2();
@@ -688,7 +688,7 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 					cb(prevV);
 				});
 				break;
-			case 'condition':
+			case 'comparison':
 				var val1;
 				async.eachSeries([arr[2]], function (arr2, cb2) {
 					if (BigNumber.isBigNumber(arr2)) {
@@ -749,7 +749,7 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 					});
 				});
 				break;
-			case 'stringCondition':
+			case 'stringComparison':
 				var val1;
 				async.eachSeries([arr[2]], function (arr2, cb2) {
 					if (typeof arr2 === 'string') {

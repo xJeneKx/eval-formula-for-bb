@@ -4,8 +4,8 @@
 
     var lexer = moo.compile({
       WS: /[ ]+/,
-      positiveInt: /[0-9]+/,
-      string: /"[\w\[\]\.\, \:\-+_]+"/,
+      digits: /[0-9]+/,
+      string: /(?:"|')[\w\[\]\.\, \:\-+_\"\']+(?:"|')/,
       op: ["+", "-", "/", "*", '&&', '||', '^'],
       name: ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'min', 'max', 'pi', 'e', 'sqrt', 'ln', 'ceil', 'floor', 'round'],
       l: '(',
@@ -14,12 +14,12 @@
       sr: ']',
       io: ['input', 'output'],
       data_feed: 'data_feed',
-      conditionals: ["==", ">=", "<=", "!=", ">", "<", "="],
+      comparisonOperators: ["==", ">=", "<=", "!=", ">", "<", "="],
       dfParamsName: ['oracles', 'feed_name', 'mci', 'feed_value', 'ifseveral', 'ifnone'],
       ioParamsName: ['address', 'amount', 'asset'],
       quote: '"',
       ternary: ['?', ':'],
-      ioParamValue: /[\w\ \-\/=+]+/,
+      ioParamValue: /[\w\ \/=+]+/,
       comma: ',',
       dot: '.',
     });
@@ -41,32 +41,32 @@
 
 @lexer lexer
 
-main -> condition {% id %}
+main -> comparison {% id %}
 
-ternary -> condition "?" AS ":" AS {% function(d) {return ['ternary', d[0], d[2], d[4]];}%}
+ternary -> comparison "?" AS ":" AS {% function(d) {return ['ternary', d[0], d[2], d[4]];}%}
 
-OR -> condition2 "||" condition {% function(d) {return ['or', d[0], d[2]];}%}
+OR -> comparison2 "||" comparison {% function(d) {return ['or', d[0], d[2]];}%}
 
-AND -> condition2 "&&" condition {% function(d) {return ['and', d[0], d[2]];}%}
+AND -> comparison2 "&&" comparison {% function(d) {return ['and', d[0], d[2]];}%}
 
 concat -> string "+" string {% function(d) {return ['concat', d[0], d[2]]}%}
 
-condition -> AS conditional AS {% function(d) {return ['condition', d[1], d[0], d[2]];}%}
- 			| string conditional string {% function(d) {return ['stringCondition', d[1], d[0], d[2]];} %}
- 			| AS conditional string {% function(d) {return ['stringCondition', d[1], d[0], d[2]];} %}
- 			| string conditional AS {% function(d) {return ['stringCondition', d[1], d[0], d[2]];} %}
+comparison -> AS conditional AS {% function(d) {return ['comparison', d[1], d[0], d[2]];}%}
+ 			| string conditional string {% function(d) {return ['stringComparison', d[1], d[0], d[2]];} %}
+ 			| AS conditional string {% function(d) {return ['stringComparison', d[1], d[0], d[2]];} %}
+ 			| string conditional AS {% function(d) {return ['stringComparison', d[1], d[0], d[2]];} %}
 			| AND {% id %}
 			| OR {% id %}
 			| AS {% id %}
 			| ternary {% id %}
 			| concat {% id %}
 
-condition2 -> AS conditional AS {% function(d) {return ['condition', d[1], d[0], d[2]];}%}
+comparison2 -> AS conditional AS {% function(d) {return ['comparison', d[1], d[0], d[2]];}%}
 	| AS {% id %}
 
-conditional -> %conditionals {% function(d) { return d[0].value } %}
+conditional -> %comparisonOperators {% function(d) { return d[0].value } %}
 
-P -> %l condition %r {% function(d) {return d[1]; } %}
+P -> %l comparison %r {% function(d) {return d[1]; } %}
     | N      {% id %}
 
 E -> P "^" E    {% function(d) {return ['^', d[0], d[2]]; } %}
@@ -93,12 +93,12 @@ N -> float          {% id %}
     | "e"           {% function(d) {return ['e']; } %}
     | "sqrt" P    {% function(d) {return ['sqrt', d[1]]; } %}
     | "ln" P      {% function(d) {return ['log', d[1]]; }  %}
-    | "min" %l (AS ",":*):+ %r  {% function(d) {var params = d[2].map(function(v){return v[0]});return ['min', params]; }  %}
-    | "max" %l (AS ",":*):+ %r  {% function(d) {var params = d[2].map(function(v){return v[0]});return ['max', params]; }  %}
+    | "min" %l (AS %comma:*):+ %r  {% function(d) {var params = d[2].map(function(v){return v[0]});return ['min', params]; }  %}
+    | "max" %l (AS %comma:*):+ %r  {% function(d) {var params = d[2].map(function(v){return v[0]});return ['max', params]; }  %}
     | "ceil" P    {% function(d) {return ['ceil', d[1]]; } %}
     | "floor" P    {% function(d) {return ['floor', d[1]]; } %}
     | "round" P    {% function(d) {return ['round', d[1]]; } %}
-    | (%data_feed %sl ( %comma:* %dfParamsName %conditionals (%string|float)):* %sr) {% function (d){
+    | (%data_feed %sl ( %comma:* %dfParamsName %comparisonOperators (%string|float)):* %sr) {% function (d){
     	var params = {};
         for(var i = 0; i < d[0][2].length; i++){
         	var name = d[0][2][i][1].value;
@@ -116,10 +116,10 @@ N -> float          {% id %}
     	return ['data_feed', params]
     	}
     %}
-    | (%io %sl ( %comma:* %ioParamsName %conditionals (%ioParamValue|float)):* "]" ) "." %ioParamsName {% function (d){
+    | (%io %sl ( %comma:* %ioParamsName %comparisonOperators (%ioParamValue|float)):* "]" ) "." %ioParamsName {% function (d){
     	var params = {};
         for(var i = 0; i < d[0][2].length; i++){
-        	var name = d[0][2][i][1].value;
+            var name = d[0][2][i][1].value;
             var operator = d[0][2][i][2].value
             var value = d[0][2][i][3][0];
 
@@ -135,7 +135,7 @@ N -> float          {% id %}
     	}
     %}
 
-float -> "-":* %positiveInt ("." %positiveInt):*         {% function(d,l, reject) {
+float -> "-":* %digits ("." %digits):*         {% function(d,l, reject) {
 	var number = d[0][0] ? '-' + d[1] : d[1];
 	if(d[2][0] && d[2][0][0].type === 'dot'){
 		if(d[2].length > 1){
@@ -144,7 +144,8 @@ float -> "-":* %positiveInt ("." %positiveInt):*         {% function(d,l, reject
 			number = number + '.' + d[2][0][1].value;
 		}
 	}
-return new BigNumber(number)} %}
+	return new BigNumber(number)
+}%}
 
 value -> AS {% id %}
 string -> %string        {% function(d) {return d[0].value; } %}

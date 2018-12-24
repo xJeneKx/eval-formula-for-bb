@@ -423,3 +423,47 @@ test('formula - datafeed2', t => {
 		t.deepEqual(res, true);
 	});
 });
+
+test('formula - datafeed3', t => {
+	let db = {};
+	db.query = function (query, params, cb) {
+		let rows = [{value: null, int_value: 10}];
+		cb(rows);
+	};
+	evalFormula("data_feed[oracles=\"MXMEKGN37H5QO2AWHT7XRG6LHJVVTAWU:this address\", feed_name=\"tes\"t\", ifseveral=\"last\", mci > 10] == 10", db, objValidationState.arrAugmentedMessages, objValidationState, 0, res => {
+		t.deepEqual(res, true);
+	});
+});
+
+test('formula - datafeed4', t => {
+	let db = {};
+	db.query = function (query, params, cb) {
+		let rows = [{value: null, int_value: 10}];
+		cb(rows);
+	};
+	evalFormula("data_feed[oracles=\"MXMEKGN37H5QO2AWHT7XRG6LHJVVTAWU:this address\", feed_name='test', ifseveral=\"last\", mci > 10] == 10", db, objValidationState.arrAugmentedMessages, objValidationState, 0, res => {
+		t.deepEqual(res, true);
+	});
+});
+
+test('formula - datafeed5', t => {
+	let db = {};
+	db.query = function (query, params, cb) {
+		let rows = [{value: null, int_value: 10}];
+		cb(rows);
+	};
+	evalFormula("data_feed[oracles=\"MXMEKGN37H5QO2AWHT7XRG6LHJVVTAWU:this address\", feed_name='tes\"t', ifseveral=\"last\", mci > 10] == 10", db, objValidationState.arrAugmentedMessages, objValidationState, 0, res => {
+		t.deepEqual(res, true);
+	});
+});
+
+test('formula - datafeed5', t => {
+	let db = {};
+	db.query = function (query, params, cb) {
+		let rows = [{value: null, int_value: 10}];
+		cb(rows);
+	};
+	evalFormula("data_feed[oracles=\"MXMEKGN37H5QO2AWHT7XRG6LHJVVTAWU:this address\", feed_name='te\'st', ifseveral=\"last\", mci > 10] == 10", db, objValidationState.arrAugmentedMessages, objValidationState, 0, res => {
+		t.deepEqual(res, true);
+	});
+});
