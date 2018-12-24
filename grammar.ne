@@ -5,7 +5,7 @@
 	var lexer = moo.compile({
 		WS: /[ ]+/,
 		digits: /[0-9]+/,
-		string: /(?:"|')[\w\[\]\.\, \:\-+_\"\']+(?:"|')/,
+		string: /(?:"[\w\[\]\.\, \:\-+_\"\']+"|'[\w\[\]\.\, \:\-+_\"\']+')/,
 		op: ["+", "-", "/", "*", '&&', '||', '^'],
 		name: ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'min', 'max', 'pi', 'e', 'sqrt', 'ln', 'ceil', 'floor', 'round'],
 		l: '(',
@@ -115,9 +115,8 @@ N -> float          {% id %}
 			}
 		}
 		return ['data_feed', params]
-		}
-	%}
-    | (%io %sl ( %comma:* %ioParamsName %comparisonOperators (%ioParamValue|float)):* "]" ) "." %ioParamsName {% function (d){
+	}%}
+    | (%io %sl ( %comma:* %ioParamsName %comparisonOperators (%ioParamValue|float)):* %sr ) "." %ioParamsName {% function (d){
 		var params = {};
 		var arrParams = d[0][2];
 		for(var i = 0; i < arrParams.length; i++){
@@ -134,10 +133,9 @@ N -> float          {% id %}
 			}
 		}
 		return [d[0][0].value, params, d[2].value]
-		}
-	%}
+	}%}
 
-float -> "-":* %digits ("." %digits):*         {% function(d,l, reject) {
+float -> "-":* %digits (%dot %digits):*         {% function(d,l, reject) {
 	var number = d[0][0] ? '-' + d[1] : d[1];
 	if(d[2][0] && d[2][0][0].type === 'dot'){
 		if(d[2].length > 1){

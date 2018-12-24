@@ -9,7 +9,7 @@ function id(x) { return x[0]; }
 	var lexer = moo.compile({
 		WS: /[ ]+/,
 		digits: /[0-9]+/,
-		string: /(?:"|')[\w\[\]\.\, \:\-+_\"\']+(?:"|')/,
+		string: /(?:"[\w\[\]\.\, \:\-+_\"\']+"|'[\w\[\]\.\, \:\-+_\"\']+')/,
 		op: ["+", "-", "/", "*", '&&', '||', '^'],
 		name: ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'min', 'max', 'pi', 'e', 'sqrt', 'ln', 'ceil', 'floor', 'round'],
 		l: '(',
@@ -112,24 +112,23 @@ var grammar = {
     {"name": "N$subexpression$1$ebnf$1", "symbols": ["N$subexpression$1$ebnf$1", "N$subexpression$1$ebnf$1$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "N$subexpression$1", "symbols": [(lexer.has("data_feed") ? {type: "data_feed"} : data_feed), (lexer.has("sl") ? {type: "sl"} : sl), "N$subexpression$1$ebnf$1", (lexer.has("sr") ? {type: "sr"} : sr)]},
     {"name": "N", "symbols": ["N$subexpression$1"], "postprocess":  function (d){
-        var params = {};
-        var arrParams = d[0][2];
-        for(var i = 0; i < arrParams.length; i++){
-        	var name = arrParams[i][1].value;
-        	var operator = arrParams[i][2].value
-        	var value = arrParams[i][3][0];
+        	var params = {};
+        	var arrParams = d[0][2];
+        	for(var i = 0; i < arrParams.length; i++){
+        		var name = arrParams[i][1].value;
+        		var operator = arrParams[i][2].value
+        		var value = arrParams[i][3][0];
         
-        	params[name] = {};
-        	params[name]['operator'] = operator;
-        	if(BigNumber.isBigNumber(value)){
-        		params[name]['value'] = value;
-        	}else{
-        		params[name]['value'] = value.value.slice(1, -1);
+        		params[name] = {};
+        		params[name]['operator'] = operator;
+        		if(BigNumber.isBigNumber(value)){
+        			params[name]['value'] = value;
+        		}else{
+        			params[name]['value'] = value.value.slice(1, -1);
+        		}
         	}
-        }
-        return ['data_feed', params]
-        }
-        	},
+        	return ['data_feed', params]
+        }},
     {"name": "N$subexpression$2$ebnf$1", "symbols": []},
     {"name": "N$subexpression$2$ebnf$1$subexpression$1$ebnf$1", "symbols": []},
     {"name": "N$subexpression$2$ebnf$1$subexpression$1$ebnf$1", "symbols": ["N$subexpression$2$ebnf$1$subexpression$1$ebnf$1", (lexer.has("comma") ? {type: "comma"} : comma)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
@@ -137,30 +136,29 @@ var grammar = {
     {"name": "N$subexpression$2$ebnf$1$subexpression$1$subexpression$1", "symbols": ["float"]},
     {"name": "N$subexpression$2$ebnf$1$subexpression$1", "symbols": ["N$subexpression$2$ebnf$1$subexpression$1$ebnf$1", (lexer.has("ioParamsName") ? {type: "ioParamsName"} : ioParamsName), (lexer.has("comparisonOperators") ? {type: "comparisonOperators"} : comparisonOperators), "N$subexpression$2$ebnf$1$subexpression$1$subexpression$1"]},
     {"name": "N$subexpression$2$ebnf$1", "symbols": ["N$subexpression$2$ebnf$1", "N$subexpression$2$ebnf$1$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "N$subexpression$2", "symbols": [(lexer.has("io") ? {type: "io"} : io), (lexer.has("sl") ? {type: "sl"} : sl), "N$subexpression$2$ebnf$1", {"literal":"]"}]},
+    {"name": "N$subexpression$2", "symbols": [(lexer.has("io") ? {type: "io"} : io), (lexer.has("sl") ? {type: "sl"} : sl), "N$subexpression$2$ebnf$1", (lexer.has("sr") ? {type: "sr"} : sr)]},
     {"name": "N", "symbols": ["N$subexpression$2", {"literal":"."}, (lexer.has("ioParamsName") ? {type: "ioParamsName"} : ioParamsName)], "postprocess":  function (d){
-        var params = {};
-        var arrParams = d[0][2];
-        for(var i = 0; i < arrParams.length; i++){
-        	var name = arrParams[i][1].value;
-        	var operator = arrParams[i][2].value
-        	var value = arrParams[i][3][0];
+        	var params = {};
+        	var arrParams = d[0][2];
+        	for(var i = 0; i < arrParams.length; i++){
+        		var name = arrParams[i][1].value;
+        		var operator = arrParams[i][2].value
+        		var value = arrParams[i][3][0];
         
-        	params[name] = {};
-        	params[name]['operator'] = operator;
-        	if(BigNumber.isBigNumber(value)){
-        		params[name]['value'] = value;
-        	}else{
-        		params[name]['value'] = value.value;
+        		params[name] = {};
+        		params[name]['operator'] = operator;
+        		if(BigNumber.isBigNumber(value)){
+        			params[name]['value'] = value;
+        		}else{
+        			params[name]['value'] = value.value;
+        		}
         	}
-        }
-        return [d[0][0].value, params, d[2].value]
-        }
-        	},
+        	return [d[0][0].value, params, d[2].value]
+        }},
     {"name": "float$ebnf$1", "symbols": []},
     {"name": "float$ebnf$1", "symbols": ["float$ebnf$1", {"literal":"-"}], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "float$ebnf$2", "symbols": []},
-    {"name": "float$ebnf$2$subexpression$1", "symbols": [{"literal":"."}, (lexer.has("digits") ? {type: "digits"} : digits)]},
+    {"name": "float$ebnf$2$subexpression$1", "symbols": [(lexer.has("dot") ? {type: "dot"} : dot), (lexer.has("digits") ? {type: "digits"} : digits)]},
     {"name": "float$ebnf$2", "symbols": ["float$ebnf$2", "float$ebnf$2$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "float", "symbols": ["float$ebnf$1", (lexer.has("digits") ? {type: "digits"} : digits), "float$ebnf$2"], "postprocess":  function(d,l, reject) {
         	var number = d[0][0] ? '-' + d[1] : d[1];
