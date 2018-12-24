@@ -6,41 +6,41 @@ function id(x) { return x[0]; }
 	var BigNumber = require('bignumber.js');
 	var moo = require("moo");
 
-    var lexer = moo.compile({
-      WS: /[ ]+/,
-      digits: /[0-9]+/,
-      string: /(?:"|')[\w\[\]\.\, \:\-+_\"\']+(?:"|')/,
-      op: ["+", "-", "/", "*", '&&', '||', '^'],
-      name: ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'min', 'max', 'pi', 'e', 'sqrt', 'ln', 'ceil', 'floor', 'round'],
-      l: '(',
-      r: ')',
-      sl:'[',
-      sr: ']',
-      io: ['input', 'output'],
-      data_feed: 'data_feed',
-      comparisonOperators: ["==", ">=", "<=", "!=", ">", "<", "="],
-      dfParamsName: ['oracles', 'feed_name', 'mci', 'feed_value', 'ifseveral', 'ifnone'],
-      ioParamsName: ['address', 'amount', 'asset'],
-      quote: '"',
-      ternary: ['?', ':'],
-      ioParamValue: /[\w\ \/=+]+/,
-      comma: ',',
-      dot: '.',
-    });
+	var lexer = moo.compile({
+		WS: /[ ]+/,
+		digits: /[0-9]+/,
+		string: /(?:"|')[\w\[\]\.\, \:\-+_\"\']+(?:"|')/,
+		op: ["+", "-", "/", "*", '&&', '||', '^'],
+		name: ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'min', 'max', 'pi', 'e', 'sqrt', 'ln', 'ceil', 'floor', 'round'],
+		l: '(',
+		r: ')',
+		sl:'[',
+		sr: ']',
+		io: ['input', 'output'],
+		data_feed: 'data_feed',
+		comparisonOperators: ["==", ">=", "<=", "!=", ">", "<", "="],
+		dfParamsName: ['oracles', 'feed_name', 'mci', 'feed_value', 'ifseveral', 'ifnone'],
+		ioParamsName: ['address', 'amount', 'asset'],
+		quote: '"',
+		ternary: ['?', ':'],
+		ioParamValue: /[\w\ \/=+]+/,
+		comma: ',',
+		dot: '.',
+	});
 
-    var origNext = lexer.next;
+	var origNext = lexer.next;
 
     lexer.next = function () {
-            var tok = origNext.call(this);
-            if (tok) {
-                switch (tok.type) {
-                    case 'WS':
-                        return lexer.next();
-                }
-                return tok;
-            }
-            return undefined;
-        };
+		var tok = origNext.call(this);
+		if (tok) {
+			switch (tok.type) {
+				case 'WS':
+					return lexer.next();
+			}
+			return tok;
+		}
+		return undefined;
+	};
 var grammar = {
     Lexer: lexer,
     ParserRules: [
@@ -49,18 +49,18 @@ var grammar = {
     {"name": "OR", "symbols": ["comparison2", {"literal":"||"}, "comparison"], "postprocess": function(d) {return ['or', d[0], d[2]];}},
     {"name": "AND", "symbols": ["comparison2", {"literal":"&&"}, "comparison"], "postprocess": function(d) {return ['and', d[0], d[2]];}},
     {"name": "concat", "symbols": ["string", {"literal":"+"}, "string"], "postprocess": function(d) {return ['concat', d[0], d[2]]}},
-    {"name": "comparison", "symbols": ["AS", "conditional", "AS"], "postprocess": function(d) {return ['comparison', d[1], d[0], d[2]];}},
-    {"name": "comparison", "symbols": ["string", "conditional", "string"], "postprocess": function(d) {return ['stringComparison', d[1], d[0], d[2]];}},
-    {"name": "comparison", "symbols": ["AS", "conditional", "string"], "postprocess": function(d) {return ['stringComparison', d[1], d[0], d[2]];}},
-    {"name": "comparison", "symbols": ["string", "conditional", "AS"], "postprocess": function(d) {return ['stringComparison', d[1], d[0], d[2]];}},
+    {"name": "comparison", "symbols": ["AS", "comparisonOperators", "AS"], "postprocess": function(d) {return ['comparison', d[1], d[0], d[2]];}},
+    {"name": "comparison", "symbols": ["string", "comparisonOperators", "string"], "postprocess": function(d) {return ['stringComparison', d[1], d[0], d[2]];}},
+    {"name": "comparison", "symbols": ["AS", "comparisonOperators", "string"], "postprocess": function(d) {return ['stringComparison', d[1], d[0], d[2]];}},
+    {"name": "comparison", "symbols": ["string", "comparisonOperators", "AS"], "postprocess": function(d) {return ['stringComparison', d[1], d[0], d[2]];}},
     {"name": "comparison", "symbols": ["AND"], "postprocess": id},
     {"name": "comparison", "symbols": ["OR"], "postprocess": id},
     {"name": "comparison", "symbols": ["AS"], "postprocess": id},
     {"name": "comparison", "symbols": ["ternary"], "postprocess": id},
     {"name": "comparison", "symbols": ["concat"], "postprocess": id},
-    {"name": "comparison2", "symbols": ["AS", "conditional", "AS"], "postprocess": function(d) {return ['comparison', d[1], d[0], d[2]];}},
+    {"name": "comparison2", "symbols": ["AS", "comparisonOperators", "AS"], "postprocess": function(d) {return ['comparison', d[1], d[0], d[2]];}},
     {"name": "comparison2", "symbols": ["AS"], "postprocess": id},
-    {"name": "conditional", "symbols": [(lexer.has("comparisonOperators") ? {type: "comparisonOperators"} : comparisonOperators)], "postprocess": function(d) { return d[0].value }},
+    {"name": "comparisonOperators", "symbols": [(lexer.has("comparisonOperators") ? {type: "comparisonOperators"} : comparisonOperators)], "postprocess": function(d) { return d[0].value }},
     {"name": "P", "symbols": [(lexer.has("l") ? {type: "l"} : l), "comparison", (lexer.has("r") ? {type: "r"} : r)], "postprocess": function(d) {return d[1]; }},
     {"name": "P", "symbols": ["N"], "postprocess": id},
     {"name": "E", "symbols": ["P", {"literal":"^"}, "E"], "postprocess": function(d) {return ['^', d[0], d[2]]; }},
@@ -113,23 +113,23 @@ var grammar = {
     {"name": "N$subexpression$1", "symbols": [(lexer.has("data_feed") ? {type: "data_feed"} : data_feed), (lexer.has("sl") ? {type: "sl"} : sl), "N$subexpression$1$ebnf$1", (lexer.has("sr") ? {type: "sr"} : sr)]},
     {"name": "N", "symbols": ["N$subexpression$1"], "postprocess":  function (d){
         var params = {};
-                for(var i = 0; i < d[0][2].length; i++){
-                	var name = d[0][2][i][1].value;
-                	var operator = d[0][2][i][2].value
-                	var value = d[0][2][i][3][0];
+        var arrParams = d[0][2];
+        for(var i = 0; i < arrParams.length; i++){
+        	var name = arrParams[i][1].value;
+        	var operator = arrParams[i][2].value
+        	var value = arrParams[i][3][0];
         
-                	params[name] = {};
-                	params[name]['operator'] = operator;
-                	if(BigNumber.isBigNumber(value)){
-                		params[name]['value'] = value;
-                	}else{
-                		params[name]['value'] = value.value.slice(1, -1);
-                	}
-                }
-                console.error(params);
+        	params[name] = {};
+        	params[name]['operator'] = operator;
+        	if(BigNumber.isBigNumber(value)){
+        		params[name]['value'] = value;
+        	}else{
+        		params[name]['value'] = value.value.slice(1, -1);
+        	}
+        }
         return ['data_feed', params]
         }
-            },
+        	},
     {"name": "N$subexpression$2$ebnf$1", "symbols": []},
     {"name": "N$subexpression$2$ebnf$1$subexpression$1$ebnf$1", "symbols": []},
     {"name": "N$subexpression$2$ebnf$1$subexpression$1$ebnf$1", "symbols": ["N$subexpression$2$ebnf$1$subexpression$1$ebnf$1", (lexer.has("comma") ? {type: "comma"} : comma)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
@@ -140,22 +140,23 @@ var grammar = {
     {"name": "N$subexpression$2", "symbols": [(lexer.has("io") ? {type: "io"} : io), (lexer.has("sl") ? {type: "sl"} : sl), "N$subexpression$2$ebnf$1", {"literal":"]"}]},
     {"name": "N", "symbols": ["N$subexpression$2", {"literal":"."}, (lexer.has("ioParamsName") ? {type: "ioParamsName"} : ioParamsName)], "postprocess":  function (d){
         var params = {};
-                for(var i = 0; i < d[0][2].length; i++){
-                    var name = d[0][2][i][1].value;
-                    var operator = d[0][2][i][2].value
-                    var value = d[0][2][i][3][0];
+        var arrParams = d[0][2];
+        for(var i = 0; i < arrParams.length; i++){
+        	var name = arrParams[i][1].value;
+        	var operator = arrParams[i][2].value
+        	var value = arrParams[i][3][0];
         
-                	params[name] = {};
-                	params[name]['operator'] = operator;
-                	if(BigNumber.isBigNumber(value)){
-                		params[name]['value'] = value;
-                	}else{
-                		params[name]['value'] = value.value;
-                	}
-                }
+        	params[name] = {};
+        	params[name]['operator'] = operator;
+        	if(BigNumber.isBigNumber(value)){
+        		params[name]['value'] = value;
+        	}else{
+        		params[name]['value'] = value.value;
+        	}
+        }
         return [d[0][0].value, params, d[2].value]
         }
-            },
+        	},
     {"name": "float$ebnf$1", "symbols": []},
     {"name": "float$ebnf$1", "symbols": ["float$ebnf$1", {"literal":"-"}], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "float$ebnf$2", "symbols": []},

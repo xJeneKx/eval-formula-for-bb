@@ -2,41 +2,41 @@
 	var BigNumber = require('bignumber.js');
 	var moo = require("moo");
 
-    var lexer = moo.compile({
-      WS: /[ ]+/,
-      digits: /[0-9]+/,
-      string: /(?:"|')[\w\[\]\.\, \:\-+_\"\']+(?:"|')/,
-      op: ["+", "-", "/", "*", '&&', '||', '^'],
-      name: ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'min', 'max', 'pi', 'e', 'sqrt', 'ln', 'ceil', 'floor', 'round'],
-      l: '(',
-      r: ')',
-      sl:'[',
-      sr: ']',
-      io: ['input', 'output'],
-      data_feed: 'data_feed',
-      comparisonOperators: ["==", ">=", "<=", "!=", ">", "<", "="],
-      dfParamsName: ['oracles', 'feed_name', 'mci', 'feed_value', 'ifseveral', 'ifnone'],
-      ioParamsName: ['address', 'amount', 'asset'],
-      quote: '"',
-      ternary: ['?', ':'],
-      ioParamValue: /[\w\ \/=+]+/,
-      comma: ',',
-      dot: '.',
-    });
+	var lexer = moo.compile({
+		WS: /[ ]+/,
+		digits: /[0-9]+/,
+		string: /(?:"|')[\w\[\]\.\, \:\-+_\"\']+(?:"|')/,
+		op: ["+", "-", "/", "*", '&&', '||', '^'],
+		name: ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'min', 'max', 'pi', 'e', 'sqrt', 'ln', 'ceil', 'floor', 'round'],
+		l: '(',
+		r: ')',
+		sl:'[',
+		sr: ']',
+		io: ['input', 'output'],
+		data_feed: 'data_feed',
+		comparisonOperators: ["==", ">=", "<=", "!=", ">", "<", "="],
+		dfParamsName: ['oracles', 'feed_name', 'mci', 'feed_value', 'ifseveral', 'ifnone'],
+		ioParamsName: ['address', 'amount', 'asset'],
+		quote: '"',
+		ternary: ['?', ':'],
+		ioParamValue: /[\w\ \/=+]+/,
+		comma: ',',
+		dot: '.',
+	});
 
-    var origNext = lexer.next;
+	var origNext = lexer.next;
 
     lexer.next = function () {
-            var tok = origNext.call(this);
-            if (tok) {
-                switch (tok.type) {
-                    case 'WS':
-                        return lexer.next();
-                }
-                return tok;
-            }
-            return undefined;
-        };
+		var tok = origNext.call(this);
+		if (tok) {
+			switch (tok.type) {
+				case 'WS':
+					return lexer.next();
+			}
+			return tok;
+		}
+		return undefined;
+	};
 %}
 
 @lexer lexer
@@ -51,20 +51,20 @@ AND -> comparison2 "&&" comparison {% function(d) {return ['and', d[0], d[2]];}%
 
 concat -> string "+" string {% function(d) {return ['concat', d[0], d[2]]}%}
 
-comparison -> AS conditional AS {% function(d) {return ['comparison', d[1], d[0], d[2]];}%}
- 			| string conditional string {% function(d) {return ['stringComparison', d[1], d[0], d[2]];} %}
- 			| AS conditional string {% function(d) {return ['stringComparison', d[1], d[0], d[2]];} %}
- 			| string conditional AS {% function(d) {return ['stringComparison', d[1], d[0], d[2]];} %}
+comparison -> AS comparisonOperators AS {% function(d) {return ['comparison', d[1], d[0], d[2]];}%}
+ 			| string comparisonOperators string {% function(d) {return ['stringComparison', d[1], d[0], d[2]];} %}
+ 			| AS comparisonOperators string {% function(d) {return ['stringComparison', d[1], d[0], d[2]];} %}
+ 			| string comparisonOperators AS {% function(d) {return ['stringComparison', d[1], d[0], d[2]];} %}
 			| AND {% id %}
 			| OR {% id %}
 			| AS {% id %}
 			| ternary {% id %}
 			| concat {% id %}
 
-comparison2 -> AS conditional AS {% function(d) {return ['comparison', d[1], d[0], d[2]];}%}
+comparison2 -> AS comparisonOperators AS {% function(d) {return ['comparison', d[1], d[0], d[2]];}%}
 	| AS {% id %}
 
-conditional -> %comparisonOperators {% function(d) { return d[0].value } %}
+comparisonOperators -> %comparisonOperators {% function(d) { return d[0].value } %}
 
 P -> %l comparison %r {% function(d) {return d[1]; } %}
     | N      {% id %}
@@ -99,41 +99,43 @@ N -> float          {% id %}
     | "floor" P    {% function(d) {return ['floor', d[1]]; } %}
     | "round" P    {% function(d) {return ['round', d[1]]; } %}
     | (%data_feed %sl ( %comma:* %dfParamsName %comparisonOperators (%string|float)):* %sr) {% function (d){
-    	var params = {};
-        for(var i = 0; i < d[0][2].length; i++){
-        	var name = d[0][2][i][1].value;
-        	var operator = d[0][2][i][2].value
-        	var value = d[0][2][i][3][0];
+		var params = {};
+		var arrParams = d[0][2];
+		for(var i = 0; i < arrParams.length; i++){
+			var name = arrParams[i][1].value;
+			var operator = arrParams[i][2].value
+			var value = arrParams[i][3][0];
 
-        	params[name] = {};
-        	params[name]['operator'] = operator;
-        	if(BigNumber.isBigNumber(value)){
-        		params[name]['value'] = value;
-        	}else{
-        		params[name]['value'] = value.value.slice(1, -1);
-        	}
-        }
-    	return ['data_feed', params]
-    	}
-    %}
+			params[name] = {};
+			params[name]['operator'] = operator;
+			if(BigNumber.isBigNumber(value)){
+				params[name]['value'] = value;
+			}else{
+				params[name]['value'] = value.value.slice(1, -1);
+			}
+		}
+		return ['data_feed', params]
+		}
+	%}
     | (%io %sl ( %comma:* %ioParamsName %comparisonOperators (%ioParamValue|float)):* "]" ) "." %ioParamsName {% function (d){
-    	var params = {};
-        for(var i = 0; i < d[0][2].length; i++){
-            var name = d[0][2][i][1].value;
-            var operator = d[0][2][i][2].value
-            var value = d[0][2][i][3][0];
+		var params = {};
+		var arrParams = d[0][2];
+		for(var i = 0; i < arrParams.length; i++){
+			var name = arrParams[i][1].value;
+			var operator = arrParams[i][2].value
+			var value = arrParams[i][3][0];
 
-        	params[name] = {};
-        	params[name]['operator'] = operator;
-        	if(BigNumber.isBigNumber(value)){
-        		params[name]['value'] = value;
-        	}else{
-        		params[name]['value'] = value.value;
-        	}
-        }
-    	return [d[0][0].value, params, d[2].value]
-    	}
-    %}
+			params[name] = {};
+			params[name]['operator'] = operator;
+			if(BigNumber.isBigNumber(value)){
+				params[name]['value'] = value;
+			}else{
+				params[name]['value'] = value.value;
+			}
+		}
+		return [d[0][0].value, params, d[2].value]
+		}
+	%}
 
 float -> "-":* %digits ("." %digits):*         {% function(d,l, reject) {
 	var number = d[0][0] ? '-' + d[1] : d[1];
