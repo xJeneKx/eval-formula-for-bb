@@ -984,9 +984,31 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 				break;
 				
 			case 'concat':
-				cb(arr[1].reduce(function (a, b) {
-					return a + b;
-				}));
+				var result = '';
+				async.eachSeries(arr.slice(1), function (param, cb2) {
+					if (BigNumber.isBigNumber(param)) {
+						result += param.toString();
+						cb2();
+					} else if (param.value) {
+						result += param.value.slice(1,-1);
+						cb2();
+					} else {
+						evaluate(param, function (res) {
+							if (BigNumber.isBigNumber(res)) {
+								result += res.toString();
+							} else if (res.value) {
+								result += res.value.slice(1,-1);
+							}else if(typeof res === 'string'){
+								result += res;
+							}else{
+								throw Error('Incorrect concat: ' + res);
+							}
+							cb2();
+						});
+					}
+				}, function () {
+					cb(result);
+				});
 				break;
 			default:
 				if (BigNumber.isBigNumber(arr[0])) return cb(arr[0]);

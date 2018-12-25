@@ -354,9 +354,22 @@ test("0.1 + 0.2 == 0.3", t => {
 	});
 });
 
-test("\"test\" + \"test\"", t => {
-	evalFormula("concat('test', -1, '_test', \"____QQQQQ____\")", 0, 0, 0, 0, res => {
-		t.deepEqual(res, "test-1_test____QQQQQ____");
+test("'test' & 'test'", t => {
+	evalFormula("1 & 1 & 1", 0, 0, 0, 0, res => {
+		t.deepEqual(res, "111");
+	});
+});
+
+test("'test' & 'test' && 'test'", t => {
+	evalFormula("'test' & 'test' & 'test'", 0, 0, 0, 0, res => {
+		t.deepEqual(res, "testtesttest");
+	});
+});
+
+
+test("'test' & 1 && 'test'", t => {
+	evalFormula("'test' & 1 & 'test'", 0, 0, 0, 0, res => {
+		t.deepEqual(res, "test1test");
 	});
 });
 
