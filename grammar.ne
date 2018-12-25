@@ -5,9 +5,11 @@
 	var lexer = moo.compile({
 		WS: /[ ]+/,
 		digits: /[0-9]+/,
+		string2: /(?:"[\w\[\]\. \:\-+_\"\']+"|'[\w\[\]\. \:\-+_\"\']+')/,
 		string: /(?:"[\w\[\]\.\, \:\-+_\"\']+"|'[\w\[\]\.\, \:\-+_\"\']+')/,
 		op: ["+", "-", "/", "*", '&&', '||', '^'],
 		name: ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'min', 'max', 'pi', 'e', 'sqrt', 'ln', 'ceil', 'floor', 'round'],
+		concat: 'concat',
 		l: '(',
 		r: ')',
 		sl:'[',
@@ -49,17 +51,26 @@ OR -> comparison2 "||" comparison {% function(d) {return ['or', d[0], d[2]];}%}
 
 AND -> comparison2 "&&" comparison {% function(d) {return ['and', d[0], d[2]];}%}
 
-concat -> string "+" string {% function(d) {return ['concat', d[0], d[2]]}%}
+concat -> %concat %l ((AS|%string2) %comma:*):+ %r {% function(d) {
+	var params = d[2].map(function(v){
+		if(BigNumber.isBigNumber(v[0][0])){
+			return v[0][0].toString();
+		} else {
+			return v[0][0].value.slice(1,-1);
+		}
+	});
+	return ['concat', params];
+}%}
 
 comparison -> AS comparisonOperator AS {% function(d) {return ['comparison', d[1], d[0], d[2]];}%}
+			| concat {% id %}
  			| string comparisonOperator string {% function(d) {return ['stringComparison', d[1], d[0], d[2]];} %}
  			| AS comparisonOperator string {% function(d) {return ['stringComparison', d[1], d[0], d[2]];} %}
  			| string comparisonOperator AS {% function(d) {return ['stringComparison', d[1], d[0], d[2]];} %}
 			| AND {% id %}
 			| OR {% id %}
-			| AS {% id %}
 			| ternary {% id %}
-			| concat {% id %}
+			| AS {% id %}
 
 comparison2 -> AS comparisonOperator AS {% function(d) {return ['comparison', d[1], d[0], d[2]];}%}
 	| AS {% id %}
@@ -98,7 +109,7 @@ N -> float          {% id %}
     | "ceil" P    {% function(d) {return ['ceil', d[1]]; } %}
     | "floor" P    {% function(d) {return ['floor', d[1]]; } %}
     | "round" P    {% function(d) {return ['round', d[1]]; } %}
-    | (%data_feed %sl ( %comma:* %dfParamsName %comparisonOperators (%string|float)):* %sr) {% function (d){
+    | (%data_feed %sl ( %comma:* %dfParamsName %comparisonOperators (%string2|%string|float)):* %sr) {% function (d){
 		var params = {};
 		var arrParams = d[0][2];
 		for(var i = 0; i < arrParams.length; i++){
@@ -148,4 +159,4 @@ float -> "-":* %digits (%dot %digits):*         {% function(d,l, reject) {
 }%}
 
 value -> AS {% id %}
-string -> %string        {% function(d) {return d[0].value; } %}
+string -> (%string2|%string)        {% function(d) {return d[0][0].value; } %}

@@ -9,9 +9,11 @@ function id(x) { return x[0]; }
 	var lexer = moo.compile({
 		WS: /[ ]+/,
 		digits: /[0-9]+/,
+		string2: /(?:"[\w\[\]\. \:\-+_\"\']+"|'[\w\[\]\. \:\-+_\"\']+')/,
 		string: /(?:"[\w\[\]\.\, \:\-+_\"\']+"|'[\w\[\]\.\, \:\-+_\"\']+')/,
 		op: ["+", "-", "/", "*", '&&', '||', '^'],
 		name: ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'min', 'max', 'pi', 'e', 'sqrt', 'ln', 'ceil', 'floor', 'round'],
+		concat: 'concat',
 		l: '(',
 		r: ')',
 		sl:'[',
@@ -48,16 +50,37 @@ var grammar = {
     {"name": "ternary", "symbols": ["comparison", {"literal":"?"}, "AS", {"literal":":"}, "AS"], "postprocess": function(d) {return ['ternary', d[0], d[2], d[4]];}},
     {"name": "OR", "symbols": ["comparison2", {"literal":"||"}, "comparison"], "postprocess": function(d) {return ['or', d[0], d[2]];}},
     {"name": "AND", "symbols": ["comparison2", {"literal":"&&"}, "comparison"], "postprocess": function(d) {return ['and', d[0], d[2]];}},
-    {"name": "concat", "symbols": ["string", {"literal":"+"}, "string"], "postprocess": function(d) {return ['concat', d[0], d[2]]}},
+    {"name": "concat$ebnf$1$subexpression$1$subexpression$1", "symbols": ["AS"]},
+    {"name": "concat$ebnf$1$subexpression$1$subexpression$1", "symbols": [(lexer.has("string2") ? {type: "string2"} : string2)]},
+    {"name": "concat$ebnf$1$subexpression$1$ebnf$1", "symbols": []},
+    {"name": "concat$ebnf$1$subexpression$1$ebnf$1", "symbols": ["concat$ebnf$1$subexpression$1$ebnf$1", (lexer.has("comma") ? {type: "comma"} : comma)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "concat$ebnf$1$subexpression$1", "symbols": ["concat$ebnf$1$subexpression$1$subexpression$1", "concat$ebnf$1$subexpression$1$ebnf$1"]},
+    {"name": "concat$ebnf$1", "symbols": ["concat$ebnf$1$subexpression$1"]},
+    {"name": "concat$ebnf$1$subexpression$2$subexpression$1", "symbols": ["AS"]},
+    {"name": "concat$ebnf$1$subexpression$2$subexpression$1", "symbols": [(lexer.has("string2") ? {type: "string2"} : string2)]},
+    {"name": "concat$ebnf$1$subexpression$2$ebnf$1", "symbols": []},
+    {"name": "concat$ebnf$1$subexpression$2$ebnf$1", "symbols": ["concat$ebnf$1$subexpression$2$ebnf$1", (lexer.has("comma") ? {type: "comma"} : comma)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "concat$ebnf$1$subexpression$2", "symbols": ["concat$ebnf$1$subexpression$2$subexpression$1", "concat$ebnf$1$subexpression$2$ebnf$1"]},
+    {"name": "concat$ebnf$1", "symbols": ["concat$ebnf$1", "concat$ebnf$1$subexpression$2"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "concat", "symbols": [(lexer.has("concat") ? {type: "concat"} : concat), (lexer.has("l") ? {type: "l"} : l), "concat$ebnf$1", (lexer.has("r") ? {type: "r"} : r)], "postprocess":  function(d) {
+        	var params = d[2].map(function(v){
+        		if(BigNumber.isBigNumber(v[0][0])){
+        			return v[0][0].toString();
+        		} else {
+        			return v[0][0].value.slice(1,-1);
+        		}
+        	});
+        	return ['concat', params];
+        }},
     {"name": "comparison", "symbols": ["AS", "comparisonOperator", "AS"], "postprocess": function(d) {return ['comparison', d[1], d[0], d[2]];}},
+    {"name": "comparison", "symbols": ["concat"], "postprocess": id},
     {"name": "comparison", "symbols": ["string", "comparisonOperator", "string"], "postprocess": function(d) {return ['stringComparison', d[1], d[0], d[2]];}},
     {"name": "comparison", "symbols": ["AS", "comparisonOperator", "string"], "postprocess": function(d) {return ['stringComparison', d[1], d[0], d[2]];}},
     {"name": "comparison", "symbols": ["string", "comparisonOperator", "AS"], "postprocess": function(d) {return ['stringComparison', d[1], d[0], d[2]];}},
     {"name": "comparison", "symbols": ["AND"], "postprocess": id},
     {"name": "comparison", "symbols": ["OR"], "postprocess": id},
-    {"name": "comparison", "symbols": ["AS"], "postprocess": id},
     {"name": "comparison", "symbols": ["ternary"], "postprocess": id},
-    {"name": "comparison", "symbols": ["concat"], "postprocess": id},
+    {"name": "comparison", "symbols": ["AS"], "postprocess": id},
     {"name": "comparison2", "symbols": ["AS", "comparisonOperator", "AS"], "postprocess": function(d) {return ['comparison', d[1], d[0], d[2]];}},
     {"name": "comparison2", "symbols": ["AS"], "postprocess": id},
     {"name": "comparisonOperator", "symbols": [(lexer.has("comparisonOperators") ? {type: "comparisonOperators"} : comparisonOperators)], "postprocess": function(d) { return d[0].value }},
@@ -106,6 +129,7 @@ var grammar = {
     {"name": "N$subexpression$1$ebnf$1", "symbols": []},
     {"name": "N$subexpression$1$ebnf$1$subexpression$1$ebnf$1", "symbols": []},
     {"name": "N$subexpression$1$ebnf$1$subexpression$1$ebnf$1", "symbols": ["N$subexpression$1$ebnf$1$subexpression$1$ebnf$1", (lexer.has("comma") ? {type: "comma"} : comma)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "N$subexpression$1$ebnf$1$subexpression$1$subexpression$1", "symbols": [(lexer.has("string2") ? {type: "string2"} : string2)]},
     {"name": "N$subexpression$1$ebnf$1$subexpression$1$subexpression$1", "symbols": [(lexer.has("string") ? {type: "string"} : string)]},
     {"name": "N$subexpression$1$ebnf$1$subexpression$1$subexpression$1", "symbols": ["float"]},
     {"name": "N$subexpression$1$ebnf$1$subexpression$1", "symbols": ["N$subexpression$1$ebnf$1$subexpression$1$ebnf$1", (lexer.has("dfParamsName") ? {type: "dfParamsName"} : dfParamsName), (lexer.has("comparisonOperators") ? {type: "comparisonOperators"} : comparisonOperators), "N$subexpression$1$ebnf$1$subexpression$1$subexpression$1"]},
@@ -172,7 +196,9 @@ var grammar = {
         	return new BigNumber(number)
         }},
     {"name": "value", "symbols": ["AS"], "postprocess": id},
-    {"name": "string", "symbols": [(lexer.has("string") ? {type: "string"} : string)], "postprocess": function(d) {return d[0].value; }}
+    {"name": "string$subexpression$1", "symbols": [(lexer.has("string2") ? {type: "string2"} : string2)]},
+    {"name": "string$subexpression$1", "symbols": [(lexer.has("string") ? {type: "string"} : string)]},
+    {"name": "string", "symbols": ["string$subexpression$1"], "postprocess": function(d) {return d[0][0].value; }}
 ]
   , ParserStart: "main"
 }

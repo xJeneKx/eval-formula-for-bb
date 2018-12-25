@@ -354,6 +354,12 @@ test("0.1 + 0.2 == 0.3", t => {
 	});
 });
 
+test("\"test\" + \"test\"", t => {
+	evalFormula("concat('test', -1, '_test', \"____QQQQQ____\")", 0, 0, 0, 0, res => {
+		t.deepEqual(res, "test-1_test____QQQQQ____");
+	});
+});
+
 test("1 == 1", t => {
 	evalFormula("1 == 1", 0, 0, 0, 0, res => {
 		t.deepEqual(res, true);
@@ -457,13 +463,24 @@ test('formula - datafeed5', t => {
 	});
 });
 
-test('formula - datafeed5', t => {
+test('formula - datafeed6', t => {
 	let db = {};
 	db.query = function (query, params, cb) {
 		let rows = [{value: null, int_value: 10}];
 		cb(rows);
 	};
 	evalFormula("data_feed[oracles=\"MXMEKGN37H5QO2AWHT7XRG6LHJVVTAWU:this address\", feed_name='te\'st', ifseveral=\"last\", mci > 10] == 10", db, objValidationState.arrAugmentedMessages, objValidationState, 0, res => {
+		t.deepEqual(res, true);
+	});
+});
+
+test('formula - datafeed7', t => {
+	let db = {};
+	db.query = function (query, params, cb) {
+		let rows = [{value: null, int_value: 10}];
+		cb(rows);
+	};
+	evalFormula("data_feed[oracles=\"MXMEKGN37H5QO2AWHT7XRG6LHJVVTAWU:this address\", feed_name='t,e\'s,t', ifseveral=\"last\", mci > 10] == 10", db, objValidationState.arrAugmentedMessages, objValidationState, 0, res => {
 		t.deepEqual(res, true);
 	});
 });

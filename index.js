@@ -22,11 +22,11 @@ exports.validate = function (formula, complexity, callback) {
 		var op = arr[0];
 		switch (op) {
 			case '+':
-				async.eachSeries(arr.slice(1), function (arr2, cb2) {
-					if (BigNumber.isBigNumber(arr2)) {
+				async.eachSeries(arr.slice(1), function (param, cb2) {
+					if (BigNumber.isBigNumber(param)) {
 						cb2(null);
 					} else {
-						evaluate(arr2, function (res) {
+						evaluate(param, function (res) {
 							cb2(null);
 						});
 					}
@@ -35,11 +35,11 @@ exports.validate = function (formula, complexity, callback) {
 				});
 				break;
 			case '-':
-				async.eachSeries(arr.slice(1), function (arr2, cb2) {
-					if (BigNumber.isBigNumber(arr2)) {
+				async.eachSeries(arr.slice(1), function (param, cb2) {
+					if (BigNumber.isBigNumber(param)) {
 						cb2(null);
 					} else {
-						evaluate(arr2, function (res) {
+						evaluate(param, function (res) {
 							cb2(null);
 						});
 					}
@@ -48,11 +48,11 @@ exports.validate = function (formula, complexity, callback) {
 				});
 				break;
 			case '*':
-				async.eachSeries(arr.slice(1), function (arr2, cb2) {
-					if (BigNumber.isBigNumber(arr2)) {
+				async.eachSeries(arr.slice(1), function (param, cb2) {
+					if (BigNumber.isBigNumber(param)) {
 						cb2(null);
 					} else {
-						evaluate(arr2, function (res) {
+						evaluate(param, function (res) {
 							cb2(null);
 						});
 					}
@@ -61,11 +61,11 @@ exports.validate = function (formula, complexity, callback) {
 				});
 				break;
 			case '/':
-				async.eachSeries(arr.slice(1), function (arr2, cb2) {
-					if (BigNumber.isBigNumber(arr2)) {
+				async.eachSeries(arr.slice(1), function (param, cb2) {
+					if (BigNumber.isBigNumber(param)) {
 						cb2(null);
 					} else {
-						evaluate(arr2, function (res) {
+						evaluate(param, function (res) {
 							cb2(null);
 						});
 					}
@@ -74,11 +74,11 @@ exports.validate = function (formula, complexity, callback) {
 				});
 				break;
 			case '^':
-				async.eachSeries(arr.slice(1), function (arr2, cb2) {
-					if (BigNumber.isBigNumber(arr2)) {
+				async.eachSeries(arr.slice(1), function (param, cb2) {
+					if (BigNumber.isBigNumber(param)) {
 						cb2(null);
 					} else {
-						evaluate(arr2, function (res) {
+						evaluate(param, function (res) {
 							cb2(null);
 						});
 					}
@@ -197,11 +197,11 @@ exports.validate = function (formula, complexity, callback) {
 				cb(true);
 				break;
 			case 'and':
-				async.eachSeries(arr.slice(1), function (arr2, cb2) {
-					if (BigNumber.isBigNumber(arr2)) {
+				async.eachSeries(arr.slice(1), function (param, cb2) {
+					if (BigNumber.isBigNumber(param)) {
 						cb2(null);
 					} else {
-						evaluate(arr2, function (res) {
+						evaluate(param, function (res) {
 							cb2(null);
 						});
 					}
@@ -210,11 +210,11 @@ exports.validate = function (formula, complexity, callback) {
 				});
 				break;
 			case 'or':
-				async.eachSeries(arr.slice(1), function (arr2, cb2) {
-					if (BigNumber.isBigNumber(arr2)) {
+				async.eachSeries(arr.slice(1), function (param, cb2) {
+					if (BigNumber.isBigNumber(param)) {
 						cb2(null);
 					} else {
-						evaluate(arr2, function (res) {
+						evaluate(param, function (res) {
 							cb2(null);
 						});
 					}
@@ -223,11 +223,11 @@ exports.validate = function (formula, complexity, callback) {
 				});
 				break;
 			case 'comparison':
-				async.eachSeries([arr[2]], function (arr2, cb2) {
-					if (BigNumber.isBigNumber(arr2)) {
+				async.eachSeries([arr[2]], function (param, cb2) {
+					if (BigNumber.isBigNumber(param)) {
 						cb2();
 					} else {
-						evaluate(arr2, function (res) {
+						evaluate(param, function (res) {
 							cb2();
 						});
 					}
@@ -246,11 +246,11 @@ exports.validate = function (formula, complexity, callback) {
 				});
 				break;
 			case 'stringComparison':
-				async.eachSeries([arr[2]], function (arr2, cb2) {
-					if (typeof arr2 === 'string') {
+				async.eachSeries([arr[2]], function (param, cb2) {
+					if (typeof param === 'string') {
 						cb2();
 					} else {
-						evaluate(arr2, function (res) {
+						evaluate(param, function (res) {
 							cb2();
 						});
 					}
@@ -269,13 +269,13 @@ exports.validate = function (formula, complexity, callback) {
 				});
 				break;
 			case 'ternary':
-				async.eachSeries([arr[1]], function (arr2, cb2) {
-					if (BigNumber.isBigNumber(arr2)) {
+				async.eachSeries([arr[1]], function (param, cb2) {
+					if (BigNumber.isBigNumber(param)) {
 						cb2();
-					} else if (typeof arr2 === 'boolean') {
+					} else if (typeof param === 'boolean') {
 						cb2();
 					} else {
-						evaluate(arr2, function (res) {
+						evaluate(param, function (res) {
 							cb2();
 						});
 					}
@@ -418,16 +418,16 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 		switch (op) {
 			case '+':
 				var prevV;
-				async.eachSeries(arr.slice(1), function (arr2, cb2) {
-					if (BigNumber.isBigNumber(arr2)) {
+				async.eachSeries(arr.slice(1), function (param, cb2) {
+					if (BigNumber.isBigNumber(param)) {
 						if (prevV === undefined) {
-							prevV = arr2;
+							prevV = param;
 						} else {
-							prevV = arr2.plus(prevV);
+							prevV = param.plus(prevV);
 						}
 						cb2(null, prevV);
 					} else {
-						evaluate(arr2, function (res) {
+						evaluate(param, function (res) {
 							if (prevV === undefined) {
 								prevV = res;
 							} else {
@@ -442,16 +442,16 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 				break;
 			case '-':
 				var prevV;
-				async.eachSeries(arr.slice(1), function (arr2, cb2) {
-					if (BigNumber.isBigNumber(arr2)) {
+				async.eachSeries(arr.slice(1), function (param, cb2) {
+					if (BigNumber.isBigNumber(param)) {
 						if (prevV === undefined) {
-							prevV = arr2;
+							prevV = param;
 						} else {
-							prevV = prevV.minus(arr2);
+							prevV = prevV.minus(param);
 						}
 						cb2(null, prevV);
 					} else {
-						evaluate(arr2, function (res) {
+						evaluate(param, function (res) {
 							if (prevV === undefined) {
 								prevV = res;
 							} else {
@@ -466,16 +466,16 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 				break;
 			case '*':
 				var prevV;
-				async.eachSeries(arr.slice(1), function (arr2, cb2) {
-					if (BigNumber.isBigNumber(arr2)) {
+				async.eachSeries(arr.slice(1), function (param, cb2) {
+					if (BigNumber.isBigNumber(param)) {
 						if (prevV === undefined) {
-							prevV = arr2;
+							prevV = param;
 						} else {
-							prevV = arr2.times(prevV);
+							prevV = param.times(prevV);
 						}
 						cb2(null, prevV);
 					} else {
-						evaluate(arr2, function (res) {
+						evaluate(param, function (res) {
 							if (prevV === undefined) {
 								prevV = res;
 							} else {
@@ -490,16 +490,16 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 				break;
 			case '/':
 				var prevV;
-				async.eachSeries(arr.slice(1), function (arr2, cb2) {
-					if (BigNumber.isBigNumber(arr2)) {
+				async.eachSeries(arr.slice(1), function (param, cb2) {
+					if (BigNumber.isBigNumber(param)) {
 						if (prevV === undefined) {
-							prevV = arr2;
+							prevV = param;
 						} else {
-							prevV = prevV.div(arr2);
+							prevV = prevV.div(param);
 						}
 						cb2(null, prevV);
 					} else {
-						evaluate(arr2, function (res) {
+						evaluate(param, function (res) {
 							if (prevV === undefined) {
 								prevV = res;
 							} else {
@@ -514,16 +514,16 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 				break;
 			case '^':
 				var prevV;
-				async.eachSeries(arr.slice(1), function (arr2, cb2) {
-					if (BigNumber.isBigNumber(arr2)) {
+				async.eachSeries(arr.slice(1), function (param, cb2) {
+					if (BigNumber.isBigNumber(param)) {
 						if (prevV === undefined) {
-							prevV = arr2;
+							prevV = param;
 						} else {
-							prevV = prevV.pow(arr2);
+							prevV = prevV.pow(param);
 						}
 						cb2(null, prevV);
 					} else {
-						evaluate(arr2, function (res) {
+						evaluate(param, function (res) {
 							if (prevV === undefined) {
 								prevV = res;
 							} else {
@@ -650,12 +650,12 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 				break;
 			case 'and':
 				var prevV = true;
-				async.eachSeries(arr.slice(1), function (arr2, cb2) {
-					if (BigNumber.isBigNumber(arr2)) {
-						prevV = prevV && !(arr2.eq(0));
+				async.eachSeries(arr.slice(1), function (param, cb2) {
+					if (BigNumber.isBigNumber(param)) {
+						prevV = prevV && !(param.eq(0));
 						cb2(null, prevV);
 					} else {
-						evaluate(arr2, function (res) {
+						evaluate(param, function (res) {
 							if(typeof res === 'boolean'){
 								prevV = prevV && res;
 							}else {
@@ -670,12 +670,12 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 				break;
 			case 'or':
 				var prevV = false;
-				async.eachSeries(arr.slice(1), function (arr2, cb2) {
-					if (BigNumber.isBigNumber(arr2)) {
-						prevV = prevV || !(arr2.eq(0));
+				async.eachSeries(arr.slice(1), function (param, cb2) {
+					if (BigNumber.isBigNumber(param)) {
+						prevV = prevV || !(param.eq(0));
 						cb2(null, prevV);
 					} else {
-						evaluate(arr2, function (res) {
+						evaluate(param, function (res) {
 							if(typeof res === 'boolean'){
 								prevV = prevV || res;
 							}else {
@@ -690,48 +690,36 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 				break;
 			case 'comparison':
 				var val1;
-				async.eachSeries([arr[2]], function (arr2, cb2) {
-					if (BigNumber.isBigNumber(arr2)) {
-						val1 = arr2;
+				var operator = arr[1];
+				var param1 = arr[2];
+				var param2 = arr[3];
+				async.eachSeries([param1], function (param, cb2) {
+					if (BigNumber.isBigNumber(param)) {
+						val1 = param;
 						cb2();
 					} else {
-						evaluate(arr2, function (res) {
+						evaluate(param, function (res) {
 							val1 = res;
 							cb2();
 						});
 					}
 				}, function () {
 					var val2;
-					async.eachSeries([arr[3]], function (arr3, cb2) {
-						if (BigNumber.isBigNumber(arr3)) {
-							val2 = arr3;
+					async.eachSeries([param2], function (param, cb2) {
+						if (BigNumber.isBigNumber(param)) {
+							val2 = param;
 							cb2();
 						} else {
-							evaluate(arr3, function (res) {
+							evaluate(param, function (res) {
 								val2 = res;
 								cb2();
 							});
 						}
 					}, function () {
 						if (typeof val1 === 'string') {
-							if(val1.substr(0,1) === '"') val1 = val1.slice(1, -1);
-							if(val2.substr(0,1) === '"') val2 = val2.slice(1, -1);
-							switch (arr[1]) {
-								case '==':
-									return cb(val1 === val2);
-								case '>=':
-									return cb(val1 >= val2);
-								case '<=':
-									return cb(val1 <= val2);
-								case '!=':
-									return cb(val1 !== val2);
-								case '>':
-									return cb(val1 > val2);
-								case '<':
-									return cb(val1 < val2);
-							}
+							throw new Error('Incorrect comparison')
 						} else {
-							switch (arr[1]) {
+							switch (operator) {
 								case '==':
 									return cb(val1.eq(val2));
 								case '>=':
@@ -751,24 +739,27 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 				break;
 			case 'stringComparison':
 				var val1;
-				async.eachSeries([arr[2]], function (arr2, cb2) {
-					if (typeof arr2 === 'string') {
-						val1 = arr2;
+				var operator = arr[1];
+				var param1 = arr[2];
+				var param2 = arr[3];
+				async.eachSeries([param1], function (param, cb2) {
+					if (typeof param === 'string') {
+						val1 = param;
 						cb2();
 					} else {
-						evaluate(arr2, function (res) {
+						evaluate(param, function (res) {
 							val1 = res;
 							cb2();
 						});
 					}
 				}, function () {
 					var val2;
-					async.eachSeries([arr[3]], function (arr3, cb2) {
-						if (typeof arr3 === 'string') {
-							val2 = arr3;
+					async.eachSeries([param2], function (param, cb2) {
+						if (typeof param === 'string') {
+							val2 = param;
 							cb2();
 						} else {
-							evaluate(arr3, function (res) {
+							evaluate(param, function (res) {
 								val2 = res;
 								cb2();
 							});
@@ -776,9 +767,9 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 					}, function () {
 						if(BigNumber.isBigNumber(val1)) val1 = val1.toString();
 						if(BigNumber.isBigNumber(val2)) val2 = val2.toString();
-						if(val1.substr(0,1) === '"') val1 = val1.slice(1, -1);
-						if(val2.substr(0,1) === '"') val2 = val2.slice(1, -1);
-						switch (arr[1]) {
+						if(val1[0] === '"' || val1[0] === "'") val1 = val1.slice(1, -1);
+						if(val2[0] === '"' || val2[0] === "'") val2 = val2.slice(1, -1);
+						switch (operator) {
 							case '==':
 								return cb(val1 === val2);
 							case '>=':
@@ -797,49 +788,35 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 				break;
 			case 'ternary':
 				var conditionResult;
-				async.eachSeries([arr[1]], function (arr2, cb2) {
-					if (BigNumber.isBigNumber(arr2)) {
-						conditionResult = !arr2.eq(0);
+				async.eachSeries([arr[1]], function (param, cb2) {
+					if (BigNumber.isBigNumber(param)) {
+						conditionResult = !param.eq(0);
 						cb2();
-					} else if (typeof arr2 === 'boolean') {
-						conditionResult = arr2;
+					} else if (typeof param === 'boolean') {
+						conditionResult = param;
 						cb2();
 					} else {
-						evaluate(arr2, function (res) {
-							conditionResult = res;
+						evaluate(param, function (res) {
+							if(typeof res === 'boolean') {
+								conditionResult = res;
+							}else if(BigNumber.isBigNumber(res)){
+								conditionResult = !(res.eq(0));
+							}else if(typeof res === 'string'){
+								conditionResult = !!res;
+							}else{
+								throw Error('Incorrect ternary');
+							}
 							cb2();
 						});
 					}
 				}, function () {
-					if (conditionResult) {
-						var result;
-						async.eachSeries([arr[2]], function (arr3, cb3) {
-							if (BigNumber.isBigNumber(arr3)) {
-								result = arr3;
-								cb3();
-							} else {
-								evaluate(arr3, function (res) {
-									result = res;
-									cb3();
-								});
-							}
-						}, function () {
-							cb(result);
-						})
+					var param2 = conditionResult ? arr[2] : arr[3];
+					if (BigNumber.isBigNumber(param2)) {
+						cb(param2);
 					} else {
-						async.eachSeries([arr[3]], function (arr3, cb3) {
-							if (BigNumber.isBigNumber(arr3)) {
-								result = arr3;
-								cb3();
-							} else {
-								evaluate(arr3, function (res) {
-									result = res;
-									cb3();
-								});
-							}
-						}, function () {
-							cb(result);
-						})
+						evaluate(param2, function (res) {
+							cb(res);
+						});
 					}
 				});
 				break;
@@ -1007,7 +984,9 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 				break;
 				
 			case 'concat':
-				cb(arr[1] + arr[2]);
+				cb(arr[1].reduce(function (a, b) {
+					return a + b;
+				}));
 				break;
 			default:
 				if (BigNumber.isBigNumber(arr[0])) return cb(arr[0]);
