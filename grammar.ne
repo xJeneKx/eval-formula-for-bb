@@ -21,7 +21,7 @@
 		comparisonOperators: ["==", ">=", "<=", "!=", ">", "<", "="],
 		dfParamsName: ['oracles', 'feed_name', 'mci', 'feed_value', 'ifseveral', 'ifnone'],
 		and: ['and', 'AND'],
-        or: ['or', 'OR'],
+		or: ['or', 'OR'],
 		ioParamsName: ['address', 'amount', 'asset'],
 		quote: '"',
 		ternary: ['?', ':'],
@@ -47,19 +47,20 @@
 
 @lexer lexer
 
-main -> comparison {% id %}
+main -> expr {% id %}
 
-ternary -> comparison "?" AS ":" AS {% function(d) {return ['ternary', d[0], d[2], d[4]];}%}
 
-OR -> comparison2 %or comparison {% function(d) {return ['or', d[0], d[2]];}%}
+ternary -> expr "?" (expr|concat) ":" (expr|concat) {% function(d) {return ['ternary', d[0], d[2][0], d[4][0]];}%}
 
-AND -> comparison2 %and comparison {% function(d) {return ['and', d[0], d[2]];}%}
+OR -> comparison2 %or expr {% function(d) {return ['or', d[0], d[2]];}%}
+
+AND -> comparison2 %and expr {% function(d) {return ['and', d[0], d[2]];}%}
 
 concat -> (%string|AS) %concat concat {% function(d) {return ['concat', d[0][0], d[2]];}%}
 	| AS {% id %}
 	| %string {% id %}
 
-comparison -> AS comparisonOperator AS {% function(d) {return ['comparison', d[1], d[0], d[2]];}%}
+expr -> AS comparisonOperator AS {% function(d) {return ['comparison', d[1], d[0], d[2]];}%}
 			| concat {% id %}
  			| string comparisonOperator string {% function(d) {return ['stringComparison', d[1], d[0], d[2]];} %}
  			| AS comparisonOperator string {% function(d) {return ['stringComparison', d[1], d[0], d[2]];} %}
@@ -74,7 +75,7 @@ comparison2 -> AS comparisonOperator AS {% function(d) {return ['comparison', d[
 
 comparisonOperator -> %comparisonOperators {% function(d) { return d[0].value } %}
 
-P -> %l comparison %r {% function(d) {return d[1]; } %}
+P -> %l expr %r {% function(d) {return d[1]; } %}
     | N      {% id %}
 
 E -> P "^" E    {% function(d) {return ['^', d[0], d[2]]; } %}
