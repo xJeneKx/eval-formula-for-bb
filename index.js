@@ -537,7 +537,7 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 							} else if(BigNumber.isBigNumber(res)) {
 								prevV = prevV || !(res.eq(0));
 							} else {
-								throw Error('Incorrect and');
+								throw Error('Incorrect or');
 							}
 							cb2(null, prevV);
 						});
@@ -574,9 +574,7 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 							});
 						}
 					}, function () {
-						if (typeof val1 === 'string') {
-							throw new Error('Incorrect comparison')
-						} else {
+						if (BigNumber.isBigNumber(val1)) {
 							switch (operator) {
 								case '==':
 									return cb(val1.eq(val2));
@@ -591,6 +589,8 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 								case '<':
 									return cb(val1.lt(val2));
 							}
+						}else{
+							throw new Error('Incorrect comparison')
 						}
 					});
 				});
