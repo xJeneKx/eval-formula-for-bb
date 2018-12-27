@@ -52,9 +52,9 @@ main -> expr {% id %}
 
 ternary -> expr "?" (expr|concat) ":" (expr|concat) {% function(d) {return ['ternary', d[0], d[2][0], d[4][0]];}%}
 
-OR -> comparison2 %or expr {% function(d) {return ['or', d[0], d[2]];}%}
+OR -> expr2 %or expr {% function(d) {return ['or', d[0], d[2]];}%}
 
-AND -> comparison2 %and expr {% function(d) {return ['and', d[0], d[2]];}%}
+AND -> expr2 %and expr {% function(d) {return ['and', d[0], d[2]];}%}
 
 concat -> (%string|AS) %concat concat {% function(d) {return ['concat', d[0][0], d[2]];}%}
 	| AS {% id %}
@@ -70,7 +70,7 @@ expr -> AS comparisonOperator AS {% function(d) {return ['comparison', d[1], d[0
 			| ternary {% id %}
 			| AS {% id %}
 
-comparison2 -> AS comparisonOperator AS {% function(d) {return ['comparison', d[1], d[0], d[2]];}%}
+expr2 -> AS comparisonOperator AS {% function(d) {return ['comparison', d[1], d[0], d[2]];}%}
 	| AS {% id %}
 
 comparisonOperator -> %comparisonOperators {% function(d) { return d[0].value } %}
