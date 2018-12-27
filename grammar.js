@@ -7,12 +7,15 @@ function id(x) { return x[0]; }
 	var moo = require("moo");
 
 	var lexer = moo.compile({
+		string: [
+			{match: /"(?:\\["\\rn]|[^"\\])*?"/, lineBreaks: true},
+			{match: /'(?:\\['\\rn]|[^'\\])*?'/, lineBreaks: true}
+		],
 		WS: /[ ]+/,
 		digits: /[0-9]+/,
-		string: /(?:"[\w\[\]\.\, \:\-+_\"\']+"|'[\w\[\]\.\, \:\-+_\"\']+')/,
-		op: ["+", "-", "/", "*", '&&', '||', '^'],
+		op: ["+", "-", "/", "*", '^'],
 		name: ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'min', 'max', 'pi', 'e', 'sqrt', 'ln', 'ceil', 'floor', 'round'],
-		concat: '&',
+		concat: '||',
 		l: '(',
 		r: ')',
 		sl:'[',
@@ -21,6 +24,8 @@ function id(x) { return x[0]; }
 		data_feed: 'data_feed',
 		comparisonOperators: ["==", ">=", "<=", "!=", ">", "<", "="],
 		dfParamsName: ['oracles', 'feed_name', 'mci', 'feed_value', 'ifseveral', 'ifnone'],
+		and: ['and', 'AND'],
+        or: ['or', 'OR'],
 		ioParamsName: ['address', 'amount', 'asset'],
 		quote: '"',
 		ternary: ['?', ':'],
@@ -47,8 +52,8 @@ var grammar = {
     ParserRules: [
     {"name": "main", "symbols": ["comparison"], "postprocess": id},
     {"name": "ternary", "symbols": ["comparison", {"literal":"?"}, "AS", {"literal":":"}, "AS"], "postprocess": function(d) {return ['ternary', d[0], d[2], d[4]];}},
-    {"name": "OR", "symbols": ["comparison2", {"literal":"||"}, "comparison"], "postprocess": function(d) {return ['or', d[0], d[2]];}},
-    {"name": "AND", "symbols": ["comparison2", {"literal":"&&"}, "comparison"], "postprocess": function(d) {return ['and', d[0], d[2]];}},
+    {"name": "OR", "symbols": ["comparison2", (lexer.has("or") ? {type: "or"} : or), "comparison"], "postprocess": function(d) {return ['or', d[0], d[2]];}},
+    {"name": "AND", "symbols": ["comparison2", (lexer.has("and") ? {type: "and"} : and), "comparison"], "postprocess": function(d) {return ['and', d[0], d[2]];}},
     {"name": "concat$subexpression$1", "symbols": [(lexer.has("string") ? {type: "string"} : string)]},
     {"name": "concat$subexpression$1", "symbols": ["AS"]},
     {"name": "concat", "symbols": ["concat$subexpression$1", (lexer.has("concat") ? {type: "concat"} : concat), "concat"], "postprocess": function(d) {return ['concat', d[0][0], d[2]];}},

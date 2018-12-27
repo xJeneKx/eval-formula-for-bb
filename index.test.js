@@ -1,4 +1,5 @@
 var evalFormula = require('./index').evaluate;
+var validateFormula = require('./index').validate;
 var test = require('ava');
 
 var objValidationState = {
@@ -212,49 +213,49 @@ test('"test 3" == "test 3"', t => {
 	});
 });
 
-test('1 && 1', t => {
-	evalFormula("1 && 1", 0, 0, 0, 0, res => {
+test('1 and 1', t => {
+	evalFormula("1 and 1", 0, 0, 0, 0, res => {
 		t.deepEqual(res, true);
 	});
 });
 
-test('0 && 0', t => {
-	evalFormula("0 && 0", 0, 0, 0, 0, res => {
+test('0 and 0', t => {
+	evalFormula("0 and 0", 0, 0, 0, 0, res => {
 		t.deepEqual(res, false);
 	});
 });
 
-test('0 && 1', t => {
-	evalFormula("0 && 1", 0, 0, 0, 0, res => {
+test('0 and 1', t => {
+	evalFormula("0 and 1", 0, 0, 0, 0, res => {
 		t.deepEqual(res, false);
 	});
 });
 
-test('0 || 1', t => {
-	evalFormula("0 || 1", 0, 0, 0, 0, res => {
+test('0 or 1', t => {
+	evalFormula("0 or 1", 0, 0, 0, 0, res => {
 		t.deepEqual(res, true);
 	});
 });
 
-test('1 == 1 && 1 == 1', t => {
-	evalFormula("1 == 1 && 1 == 1", 0, 0, 0, 0, res => {
+test('1 == 1 and 1 == 1', t => {
+	evalFormula("1 == 1 and 1 == 1", 0, 0, 0, 0, res => {
 		t.deepEqual(res, true);
 	});
 });
-test('1 == 1 && 1 == 2', t => {
-	evalFormula("1 == 1 && 1 == 2", 0, 0, 0, 0, res => {
+test('1 == 1 and 1 == 2', t => {
+	evalFormula("1 == 1 and 1 == 2", 0, 0, 0, 0, res => {
 		t.deepEqual(res, false);
 	});
 });
 
-test('1 == 1 || 1 == 2', t => {
-	evalFormula("1 == 1 || 1 == 2", 0, 0, 0, 0, res => {
+test('1 == 1 or 1 == 2', t => {
+	evalFormula("1 == 1 or 1 == 2", 0, 0, 0, 0, res => {
 		t.deepEqual(res, true);
 	});
 });
 
-test('1 == 2 || 1 == 2', t => {
-	evalFormula("1 == 2 || 1 == 2", 0, 0, 0, 0, res => {
+test('1 == 2 or 1 == 2', t => {
+	evalFormula("1 == 2 or 1 == 2", 0, 0, 0, 0, res => {
 		t.deepEqual(res, false);
 	});
 });
@@ -354,21 +355,21 @@ test("0.1 + 0.2 == 0.3", t => {
 	});
 });
 
-test("'test' & 'test'", t => {
-	evalFormula("1 & 1 & 1", 0, 0, 0, 0, res => {
+test("'test' || 'test'", t => {
+	evalFormula("1 || 1 || 1", 0, 0, 0, 0, res => {
 		t.deepEqual(res, "111");
 	});
 });
 
-test("'test' & 'test' && 'test'", t => {
-	evalFormula("'test' & 'test' & 'test'", 0, 0, 0, 0, res => {
+test("'test' || 'test' and 'test'", t => {
+	evalFormula("'test' || 'test' || 'test'", 0, 0, 0, 0, res => {
 		t.deepEqual(res, "testtesttest");
 	});
 });
 
 
-test("'test' & 1 && 'test'", t => {
-	evalFormula("'test' & 1 & 'test'", 0, 0, 0, 0, res => {
+test("'test' || 1 and 'test'", t => {
+	evalFormula("'test' || 1 || 'test'", 0, 0, 0, 0, res => {
 		t.deepEqual(res, "test1test");
 	});
 });
@@ -449,7 +450,7 @@ test('formula - datafeed3', t => {
 		let rows = [{value: null, int_value: 10}];
 		cb(rows);
 	};
-	evalFormula("data_feed[oracles=\"MXMEKGN37H5QO2AWHT7XRG6LHJVVTAWU:this address\", feed_name=\"tes\"t\", ifseveral=\"last\", mci > 10] == 10", db, objValidationState.arrAugmentedMessages, objValidationState, 0, res => {
+	evalFormula('data_feed[oracles="MXMEKGN37H5QO2AWHT7XRG6LHJVVTAWU:this address", feed_name="te\\"st", ifseveral="last", mci > 10] == 10', db, objValidationState.arrAugmentedMessages, objValidationState, 0, res => {
 		t.deepEqual(res, true);
 	});
 });
@@ -482,7 +483,7 @@ test('formula - datafeed6', t => {
 		let rows = [{value: null, int_value: 10}];
 		cb(rows);
 	};
-	evalFormula("data_feed[oracles=\"MXMEKGN37H5QO2AWHT7XRG6LHJVVTAWU:this address\", feed_name='te\'st', ifseveral=\"last\", mci > 10] == 10", db, objValidationState.arrAugmentedMessages, objValidationState, 0, res => {
+	evalFormula("data_feed[oracles=\"MXMEKGN37H5QO2AWHT7XRG6LHJVVTAWU:this address\", feed_name='te\\'st', ifseveral=\"last\", mci > 10] == 10", db, objValidationState.arrAugmentedMessages, objValidationState, 0, res => {
 		t.deepEqual(res, true);
 	});
 });
@@ -493,7 +494,25 @@ test('formula - datafeed7', t => {
 		let rows = [{value: null, int_value: 10}];
 		cb(rows);
 	};
-	evalFormula("data_feed[oracles=\"MXMEKGN37H5QO2AWHT7XRG6LHJVVTAWU:this address\", feed_name='t,e\'s,t', ifseveral=\"last\", mci > 10] == 10", db, objValidationState.arrAugmentedMessages, objValidationState, 0, res => {
+	evalFormula("data_feed[oracles=\"MXMEKGN37H5QO2AWHT7XRG6LHJVVTAWU:this address\", feed_name='t,e(s)[],\\'t', ifseveral=\"last\", mci > 10] == 10", db, objValidationState.arrAugmentedMessages, objValidationState, 0, res => {
 		t.deepEqual(res, true);
 	});
+});
+
+test('validate 1 + 1', t => {
+	validateFormula("1 + 1", 0, res => {
+		t.deepEqual(res.error, false);
+	})
+});
+
+test('validate datafeed ok', t => {
+	validateFormula("data_feed[oracles=\"this address\", feed_name=\"test\"]", 0, res => {
+		t.deepEqual(res.error, false);
+	})
+});
+
+test('validate datafeed error', t => {
+	validateFormula("data_feed[oracles=\"this address\"]", 0, res => {
+		t.deepEqual(res.error, true);
+	})
 });

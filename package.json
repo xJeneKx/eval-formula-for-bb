@@ -1,12 +1,12 @@
 {
   "name": "eval-formula-for-bb",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "dependencies": {
     "async": "^2.6.1",
     "bignumber.js": "^8.0.1",
     "byteballcore": "^0.2.93",
     "moo": "^0.5.0",
-    "nearley": "^2.15.1"
+    "nearley": "^2.16.0"
   },
   "devDependencies": {
     "ava": "^0.25.0"

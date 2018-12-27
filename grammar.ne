@@ -3,12 +3,15 @@
 	var moo = require("moo");
 
 	var lexer = moo.compile({
+		string: [
+			{match: /"(?:\\["\\rn]|[^"\\])*?"/, lineBreaks: true},
+			{match: /'(?:\\['\\rn]|[^'\\])*?'/, lineBreaks: true}
+		],
 		WS: /[ ]+/,
 		digits: /[0-9]+/,
-		string: /(?:"[\w\[\]\.\, \:\-+_\"\']+"|'[\w\[\]\.\, \:\-+_\"\']+')/,
-		op: ["+", "-", "/", "*", '&&', '||', '^'],
+		op: ["+", "-", "/", "*", '^'],
 		name: ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'min', 'max', 'pi', 'e', 'sqrt', 'ln', 'ceil', 'floor', 'round'],
-		concat: '&',
+		concat: '||',
 		l: '(',
 		r: ')',
 		sl:'[',
@@ -17,6 +20,8 @@
 		data_feed: 'data_feed',
 		comparisonOperators: ["==", ">=", "<=", "!=", ">", "<", "="],
 		dfParamsName: ['oracles', 'feed_name', 'mci', 'feed_value', 'ifseveral', 'ifnone'],
+		and: ['and', 'AND'],
+        or: ['or', 'OR'],
 		ioParamsName: ['address', 'amount', 'asset'],
 		quote: '"',
 		ternary: ['?', ':'],
@@ -46,9 +51,9 @@ main -> comparison {% id %}
 
 ternary -> comparison "?" AS ":" AS {% function(d) {return ['ternary', d[0], d[2], d[4]];}%}
 
-OR -> comparison2 "||" comparison {% function(d) {return ['or', d[0], d[2]];}%}
+OR -> comparison2 %or comparison {% function(d) {return ['or', d[0], d[2]];}%}
 
-AND -> comparison2 "&&" comparison {% function(d) {return ['and', d[0], d[2]];}%}
+AND -> comparison2 %and comparison {% function(d) {return ['and', d[0], d[2]];}%}
 
 concat -> (%string|AS) %concat concat {% function(d) {return ['concat', d[0][0], d[2]];}%}
 	| AS {% id %}
