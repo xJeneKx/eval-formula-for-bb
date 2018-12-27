@@ -7,7 +7,7 @@
 			{match: /"(?:\\["\\rn]|[^"\\])*?"/, lineBreaks: true},
 			{match: /'(?:\\['\\rn]|[^'\\])*?'/, lineBreaks: true}
 		],
-		WS: /[ ]+/,
+		WS: {match: /[\s]+/, lineBreaks: true},
 		digits: /[0-9]+/,
 		op: ["+", "-", "/", "*", '^'],
 		name: ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'min', 'max', 'pi', 'e', 'sqrt', 'ln', 'ceil', 'floor', 'round'],
@@ -58,14 +58,14 @@ AND -> expr2 %and expr {% function(d) {return ['and', d[0], d[2]];}%}
 
 expr -> (%string|AS) %concat expr {% function(d) {return ['concat', d[0][0], d[2]];}%}
 	| AS comparisonOperator AS {% function(d) {return ['comparison', d[1], d[0], d[2]];}%}
-    | string comparisonOperator string {% function(d) {return ['stringComparison', d[1], d[0], d[2]];} %}
-    | AS comparisonOperator string {% function(d) {return ['stringComparison', d[1], d[0], d[2]];} %}
-    | string comparisonOperator AS {% function(d) {return ['stringComparison', d[1], d[0], d[2]];} %}
-    | AND {% id %}
-    | OR {% id %}
-    | ternary {% id %}
-    | AS {% id %}
-    | %string {% id %}
+	| string comparisonOperator string {% function(d) {return ['stringComparison', d[1], d[0], d[2]];} %}
+	| AS comparisonOperator string {% function(d) {return ['stringComparison', d[1], d[0], d[2]];} %}
+	| string comparisonOperator AS {% function(d) {return ['stringComparison', d[1], d[0], d[2]];} %}
+	| AND {% id %}
+	| OR {% id %}
+	| ternary {% id %}
+	| AS {% id %}
+	| %string {% id %}
 
 
 expr2 -> AS comparisonOperator AS {% function(d) {return ['comparison', d[1], d[0], d[2]];}%}
@@ -123,7 +123,7 @@ N -> float          {% id %}
 		}
 		return ['data_feed', params]
 	}%}
-    | (%io %sl ( %comma:* %ioParamsName %comparisonOperators (%ioParamValue|float)):* %sr ) "." %ioParamsName {% function (d){
+    | (%io %sl ( %comma:* %ioParamsName %comparisonOperators (%ioParamValue|float)):* %sr ) %dot %ioParamsName {% function (d){
 		var params = {};
 		var arrParams = d[0][2];
 		for(var i = 0; i < arrParams.length; i++){

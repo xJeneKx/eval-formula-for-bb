@@ -28,14 +28,14 @@ exports.validate = function (formula, complexity, callback) {
 			case '^':
 				async.eachSeries(arr.slice(1), function (param, cb2) {
 					if (BigNumber.isBigNumber(param)) {
-						cb2(true);
+						cb2();
 					} else {
 						evaluate(param, function (res) {
-							cb2(res);
+							cb2(!res);
 						});
 					}
-				}, function (result) {
-					cb(result);
+				}, function (error) {
+					cb(!error);
 				});
 				break;
 			case 'sin':
@@ -53,7 +53,7 @@ exports.validate = function (formula, complexity, callback) {
 					cb(true);
 				} else {
 					evaluate(arr[1], function (res) {
-						cb(res);
+						cb(!!res);
 					});
 				}
 				break;
@@ -66,87 +66,87 @@ exports.validate = function (formula, complexity, callback) {
 			case 'or':
 				async.eachSeries(arr.slice(1), function (param, cb2) {
 					if (BigNumber.isBigNumber(param)) {
-						cb2(true);
+						cb2();
 					} else {
 						evaluate(param, function (res) {
-							cb2(res);
+							cb2(!res);
 						});
 					}
-				}, function (result) {
-					cb(result);
+				}, function (error) {
+					cb(!error);
 				});
 				break;
 			case 'comparison':
 				async.eachSeries([arr[2]], function (param, cb2) {
 					if (BigNumber.isBigNumber(param)) {
-						cb2(true);
+						cb2();
 					} else {
 						evaluate(param, function (res) {
-							cb2(res);
+							cb2(!res);
 						});
 					}
-				}, function (result) {
-					if(!result) return cb(false);
+				}, function (error) {
+					if(error) return cb(false);
 					async.eachSeries([arr[3]], function (arr3, cb2) {
 						if (BigNumber.isBigNumber(arr3)) {
-							cb2(true);
+							cb2();
 						} else {
 							evaluate(arr3, function (res) {
-								cb2(res);
+								cb2(!res);
 							});
 						}
-					}, function (result2) {
-						cb(result2);
+					}, function (error2) {
+						cb(!error2);
 					});
 				});
 				break;
 			case 'stringComparison':
 				async.eachSeries([arr[2]], function (param, cb2) {
 					if (typeof param === 'string') {
-						cb2(true);
+						cb2();
 					} else {
 						evaluate(param, function (res) {
-							cb2(res);
+							cb2(!res);
 						});
 					}
-				}, function (result) {
-					if(!result) return cb(false);
+				}, function (error) {
+					if(error) return cb(false);
 					async.eachSeries([arr[3]], function (arr3, cb2) {
 						if (typeof arr3 === 'string') {
-							cb2(true);
+							cb2();
 						} else {
 							evaluate(arr3, function (res) {
-								cb2(res);
+								cb2(!res);
 							});
 						}
-					}, function (result2) {
-						cb(result2);
+					}, function (error2) {
+						cb(!error2);
 					});
 				});
 				break;
 			case 'ternary':
 				async.eachSeries([arr[1]], function (param, cb2) {
 					if (BigNumber.isBigNumber(param)) {
-						cb2(true);
+						cb2();
 					} else if (typeof param === 'boolean') {
-						cb2(true);
+						cb2();
 					} else {
 						evaluate(param, function (res) {
-							cb2(res);
+							cb2(!res);
 						});
 					}
-				}, function (result) {
-					if(!result) return cb(false);
+				}, function (error) {
+					if(error) return cb(false);
 					async.eachSeries([arr[2]], function (arr3, cb3) {
 						if (BigNumber.isBigNumber(arr3)) {
-							cb3(true);
+							cb3();
 						} else {
 							evaluate(arr3, function (res) {
-								cb3(res);
+								cb3(!res);
 							});
 						}
-					}, function (result2) {
-						cb(result2);
+					}, function (error2) {
+						cb(!error2);
 					})
 				});
 				break;

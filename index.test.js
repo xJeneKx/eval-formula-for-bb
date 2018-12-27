@@ -516,3 +516,21 @@ test('validate datafeed error', t => {
 		t.deepEqual(res.error, true);
 	})
 });
+
+test('validate 1 + datafeed ok', t => {
+	validateFormula("1 + data_feed[oracles=\"this address\", feed_name=\"test\"]", 0, res => {
+		t.deepEqual(res.error, false);
+	});
+});
+
+test('validate 1 + datafeed error', t => {
+	validateFormula("1 + data_feed[oracles=\"this address\"]", 0, res => {
+		t.deepEqual(res.error, true);
+	})
+});
+
+test('validate round ok', t => {
+	validateFormula("round(1+1.5)", 0, res => {
+		t.deepEqual(res.error, false);
+	})
+});

@@ -11,7 +11,7 @@ function id(x) { return x[0]; }
 			{match: /"(?:\\["\\rn]|[^"\\])*?"/, lineBreaks: true},
 			{match: /'(?:\\['\\rn]|[^'\\])*?'/, lineBreaks: true}
 		],
-		WS: /[ ]+/,
+		WS: {match: /[\s]+/, lineBreaks: true},
 		digits: /[0-9]+/,
 		op: ["+", "-", "/", "*", '^'],
 		name: ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'min', 'max', 'pi', 'e', 'sqrt', 'ln', 'ceil', 'floor', 'round'],
@@ -145,7 +145,7 @@ var grammar = {
     {"name": "N$subexpression$2$ebnf$1$subexpression$1", "symbols": ["N$subexpression$2$ebnf$1$subexpression$1$ebnf$1", (lexer.has("ioParamsName") ? {type: "ioParamsName"} : ioParamsName), (lexer.has("comparisonOperators") ? {type: "comparisonOperators"} : comparisonOperators), "N$subexpression$2$ebnf$1$subexpression$1$subexpression$1"]},
     {"name": "N$subexpression$2$ebnf$1", "symbols": ["N$subexpression$2$ebnf$1", "N$subexpression$2$ebnf$1$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "N$subexpression$2", "symbols": [(lexer.has("io") ? {type: "io"} : io), (lexer.has("sl") ? {type: "sl"} : sl), "N$subexpression$2$ebnf$1", (lexer.has("sr") ? {type: "sr"} : sr)]},
-    {"name": "N", "symbols": ["N$subexpression$2", {"literal":"."}, (lexer.has("ioParamsName") ? {type: "ioParamsName"} : ioParamsName)], "postprocess":  function (d){
+    {"name": "N", "symbols": ["N$subexpression$2", (lexer.has("dot") ? {type: "dot"} : dot), (lexer.has("ioParamsName") ? {type: "ioParamsName"} : ioParamsName)], "postprocess":  function (d){
         	var params = {};
         	var arrParams = d[0][2];
         	for(var i = 0; i < arrParams.length; i++){
