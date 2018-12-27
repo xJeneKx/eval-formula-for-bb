@@ -12,7 +12,7 @@ function id(x) { return x[0]; }
 			{match: /'(?:\\['\\rn]|[^'\\])*?'/, lineBreaks: true}
 		],
 		WS: {match: /[\s]+/, lineBreaks: true},
-		digits: /[0-9]+/,
+		digits: /-?(?:[0-9]|[1-9][0-9]+)(?:\.[0-9]+)?(?:[eE][-+]?[0-9]+)?\b/,
 		op: ["+", "-", "/", "*", '^'],
 		name: ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'min', 'max', 'pi', 'e', 'sqrt', 'ln', 'ceil', 'floor', 'round'],
 		concat: '||',
@@ -163,22 +163,7 @@ var grammar = {
         	}
         	return [d[0][0].value, params, d[2].value]
         }},
-    {"name": "float$ebnf$1", "symbols": []},
-    {"name": "float$ebnf$1", "symbols": ["float$ebnf$1", {"literal":"-"}], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "float$ebnf$2", "symbols": []},
-    {"name": "float$ebnf$2$subexpression$1", "symbols": [(lexer.has("dot") ? {type: "dot"} : dot), (lexer.has("digits") ? {type: "digits"} : digits)]},
-    {"name": "float$ebnf$2", "symbols": ["float$ebnf$2", "float$ebnf$2$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "float", "symbols": ["float$ebnf$1", (lexer.has("digits") ? {type: "digits"} : digits), "float$ebnf$2"], "postprocess":  function(d,l, reject) {
-        	var number = d[0][0] ? '-' + d[1] : d[1];
-        	if(d[2][0] && d[2][0][0].type === 'dot'){
-        		if(d[2].length > 1){
-        			return reject;
-        		}else{
-        			number = number + '.' + d[2][0][1].value;
-        		}
-        	}
-        	return new BigNumber(number)
-        }},
+    {"name": "float", "symbols": [(lexer.has("digits") ? {type: "digits"} : digits)], "postprocess": function(d,l, reject) { return new BigNumber(d[0]); }},
     {"name": "value", "symbols": ["AS"], "postprocess": id},
     {"name": "string", "symbols": [(lexer.has("string") ? {type: "string"} : string)], "postprocess": function(d) {return d[0].value; }}
 ]

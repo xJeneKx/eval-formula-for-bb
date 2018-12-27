@@ -8,7 +8,7 @@
 			{match: /'(?:\\['\\rn]|[^'\\])*?'/, lineBreaks: true}
 		],
 		WS: {match: /[\s]+/, lineBreaks: true},
-		digits: /[0-9]+/,
+		digits: /-?(?:[0-9]|[1-9][0-9]+)(?:\.[0-9]+)?(?:[eE][-+]?[0-9]+)?\b/,
 		op: ["+", "-", "/", "*", '^'],
 		name: ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'min', 'max', 'pi', 'e', 'sqrt', 'ln', 'ceil', 'floor', 'round'],
 		concat: '||',
@@ -142,17 +142,7 @@ N -> float          {% id %}
 		return [d[0][0].value, params, d[2].value]
 	}%}
 
-float -> "-":* %digits (%dot %digits):*         {% function(d,l, reject) {
-	var number = d[0][0] ? '-' + d[1] : d[1];
-	if(d[2][0] && d[2][0][0].type === 'dot'){
-		if(d[2].length > 1){
-			return reject;
-		}else{
-			number = number + '.' + d[2][0][1].value;
-		}
-	}
-	return new BigNumber(number)
-}%}
+float -> %digits           {% function(d,l, reject) { return new BigNumber(d[0]); }%}
 
 value -> AS {% id %}
 string -> %string        {% function(d) {return d[0].value; } %}
