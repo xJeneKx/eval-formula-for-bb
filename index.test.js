@@ -534,3 +534,15 @@ test('validate round ok', t => {
 		t.deepEqual(res.error, false);
 	})
 });
+
+test('validate min ok', t => {
+	evalFormula("min(1 + (1 + 1) - 1, 2)", 0, 0, 0, 0, res => {
+		t.deepEqual(res.eq(2), true);
+	})
+});
+
+test('validate 1 + datafeed error', t => {
+	validateFormula("max(data_feed[oracles=\"this address\"], 2)", 0, res => {
+		t.deepEqual(res.error, true);
+	})
+});

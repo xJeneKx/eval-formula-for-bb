@@ -59,12 +59,7 @@ exports.validate = function (formula, complexity, callback) {
 				break;
 			case 'min':
 			case 'max':
-			case 'pi':
-				cb(true);
-				break;
-			case 'and':
-			case 'or':
-				async.eachSeries(arr.slice(1), function (param, cb2) {
+				async.eachSeries(arr[1], function (param, cb2) {
 					if (BigNumber.isBigNumber(param)) {
 						cb2();
 					} else {
@@ -76,8 +71,13 @@ exports.validate = function (formula, complexity, callback) {
 					cb(!error);
 				});
 				break;
+			case 'pi':
+				cb(true);
+				break;
+			case 'and':
+			case 'or':
 			case 'comparison':
-				async.eachSeries([arr[2]], function (param, cb2) {
+				async.eachSeries(arr.slice(1), function (param, cb2) {
 					if (BigNumber.isBigNumber(param)) {
 						cb2();
 					} else {
@@ -86,42 +86,7 @@ exports.validate = function (formula, complexity, callback) {
 						});
 					}
 				}, function (error) {
-					if(error) return cb(false);
-					async.eachSeries([arr[3]], function (arr3, cb2) {
-						if (BigNumber.isBigNumber(arr3)) {
-							cb2();
-						} else {
-							evaluate(arr3, function (res) {
-								cb2(!res);
-							});
-						}
-					}, function (error2) {
-						cb(!error2);
-					});
-				});
-				break;
-			case 'stringComparison':
-				async.eachSeries([arr[2]], function (param, cb2) {
-					if (typeof param === 'string') {
-						cb2();
-					} else {
-						evaluate(param, function (res) {
-							cb2(!res);
-						});
-					}
-				}, function (error) {
-					if(error) return cb(false);
-					async.eachSeries([arr[3]], function (arr3, cb2) {
-						if (typeof arr3 === 'string') {
-							cb2();
-						} else {
-							evaluate(arr3, function (res) {
-								cb2(!res);
-							});
-						}
-					}, function (error2) {
-						cb(!error2);
-					});
+					cb(!error);
 				});
 				break;
 			case 'ternary':
@@ -490,14 +455,48 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 				}
 				break;
 			case 'min':
-				cb(arr[1].reduce(function (a, b) {
-					return BigNumber.min(a, b);
-				}));
+				var vals = [];
+				async.eachSeries(arr[1], function (param, cb2) {
+					if (BigNumber.isBigNumber(param)) {
+						vals.push(param);
+						cb2(null);
+					} else {
+						evaluate(param, function (res) {
+							if(BigNumber.isBigNumber(res)) {
+								vals.push(res);
+							} else {
+								throw Error('Incorrect min');
+							}
+							cb2(null);
+						});
+					}
+				}, function () {
+					cb(vals.reduce(function (a, b) {
+						return BigNumber.min(a, b);
+					}));
+				});
 				break;
 			case 'max':
-				cb(arr[1].reduce(function (a, b) {
-					return BigNumber.max(a, b);
-				}));
+				var vals = [];
+				async.eachSeries(arr[1], function (param, cb2) {
+					if (BigNumber.isBigNumber(param)) {
+						vals.push(param);
+						cb2(null);
+					} else {
+						evaluate(param, function (res) {
+							if(BigNumber.isBigNumber(res)) {
+								vals.push(res);
+							} else {
+								throw Error('Incorrect max');
+							}
+							cb2(null);
+						});
+					}
+				}, function () {
+					cb(vals.reduce(function (a, b) {
+						return BigNumber.max(a, b);
+					}));
+				});
 				break;
 			case 'pi':
 				cb(new BigNumber(Math.PI));
@@ -555,6 +554,9 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 					if (BigNumber.isBigNumber(param)) {
 						val1 = param;
 						cb2();
+					} else if(typeof param === 'string'){
+						val1 = param;
+						cb2();
 					} else {
 						evaluate(param, function (res) {
 							val1 = res;
@@ -567,6 +569,9 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 						if (BigNumber.isBigNumber(param)) {
 							val2 = param;
 							cb2();
+						} else if(typeof param === 'string'){
+							val2 = param;
+							cb2();
 						} else {
 							evaluate(param, function (res) {
 								val2 = res;
@@ -574,7 +579,26 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 							});
 						}
 					}, function () {
-						if (BigNumber.isBigNumber(val1)) {
+						if(typeof val1 === 'string' || typeof val2 === 'string'){
+							if(BigNumber.isBigNumber(val1)) val1 = val1.toString();
+							if(BigNumber.isBigNumber(val2)) val2 = val2.toString();
+							if(val1[0] === '"' || val1[0] === "'") val1 = val1.slice(1, -1);
+							if(val2[0] === '"' || val2[0] === "'") val2 = val2.slice(1, -1);
+							switch (operator) {
+								case '==':
+									return cb(val1 === val2);
+								case '>=':
+									return cb(val1 >= val2);
+								case '<=':
+									return cb(val1 <= val2);
+								case '!=':
+									return cb(val1 !== val2);
+								case '>':
+									return cb(val1 > val2);
+								case '<':
+									return cb(val1 < val2);
+							}
+						} else if (BigNumber.isBigNumber(val1) && BigNumber.isBigNumber(val2)) {
 							switch (operator) {
 								case '==':
 									return cb(val1.eq(val2));
@@ -589,57 +613,8 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 								case '<':
 									return cb(val1.lt(val2));
 							}
-						}else{
-							throw new Error('Incorrect comparison')
-						}
-					});
-				});
-				break;
-			case 'stringComparison':
-				var val1;
-				var operator = arr[1];
-				var param1 = arr[2];
-				var param2 = arr[3];
-				async.eachSeries([param1], function (param, cb2) {
-					if (typeof param === 'string') {
-						val1 = param;
-						cb2();
-					} else {
-						evaluate(param, function (res) {
-							val1 = res;
-							cb2();
-						});
-					}
-				}, function () {
-					var val2;
-					async.eachSeries([param2], function (param, cb2) {
-						if (typeof param === 'string') {
-							val2 = param;
-							cb2();
 						} else {
-							evaluate(param, function (res) {
-								val2 = res;
-								cb2();
-							});
-						}
-					}, function () {
-						if(BigNumber.isBigNumber(val1)) val1 = val1.toString();
-						if(BigNumber.isBigNumber(val2)) val2 = val2.toString();
-						if(val1[0] === '"' || val1[0] === "'") val1 = val1.slice(1, -1);
-						if(val2[0] === '"' || val2[0] === "'") val2 = val2.slice(1, -1);
-						switch (operator) {
-							case '==':
-								return cb(val1 === val2);
-							case '>=':
-								return cb(val1 >= val2);
-							case '<=':
-								return cb(val1 <= val2);
-							case '!=':
-								return cb(val1 !== val2);
-							case '>':
-								return cb(val1 > val2);
-							case '<':
-								return cb(val1 < val2);
+							throw new Error('Incorrect comparison')
 						}
 					});
 				});

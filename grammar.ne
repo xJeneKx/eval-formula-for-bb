@@ -57,10 +57,7 @@ OR -> expr2 %or expr {% function(d) {return ['or', d[0], d[2]];}%}
 AND -> expr2 %and expr {% function(d) {return ['and', d[0], d[2]];}%}
 
 expr -> (%string|AS) %concat expr {% function(d) {return ['concat', d[0][0], d[2]];}%}
-	| AS comparisonOperator AS {% function(d) {return ['comparison', d[1], d[0], d[2]];}%}
-	| string comparisonOperator string {% function(d) {return ['stringComparison', d[1], d[0], d[2]];} %}
-	| AS comparisonOperator string {% function(d) {return ['stringComparison', d[1], d[0], d[2]];} %}
-	| string comparisonOperator AS {% function(d) {return ['stringComparison', d[1], d[0], d[2]];} %}
+	| (AS|string) comparisonOperator (AS|string) {% function(d) {return ['comparison', d[1], d[0][0], d[2][0]];}%}
 	| AND {% id %}
 	| OR {% id %}
 	| ternary {% id %}
