@@ -90,7 +90,7 @@ exports.validate = function (formula, complexity, callback) {
 				});
 				break;
 			case 'ternary':
-				async.eachSeries([arr[1]], function (param, cb2) {
+				async.eachSeries(arr.slice(1), function (param, cb2) {
 					if (BigNumber.isBigNumber(param)) {
 						cb2();
 					} else if (typeof param === 'boolean') {
@@ -101,18 +101,7 @@ exports.validate = function (formula, complexity, callback) {
 						});
 					}
 				}, function (error) {
-					if(error) return cb(false);
-					async.eachSeries([arr[2]], function (arr3, cb3) {
-						if (BigNumber.isBigNumber(arr3)) {
-							cb3();
-						} else {
-							evaluate(arr3, function (res) {
-								cb3(!res);
-							});
-						}
-					}, function (error2) {
-						cb(!error2);
-					})
+					cb(!error);
 				});
 				break;
 			case 'e':
@@ -154,7 +143,7 @@ exports.validate = function (formula, complexity, callback) {
 			callback({complexity, error: !res});
 		});
 	} else {
-		callback({error: true, complexity});
+		callback({complexity, error: true});
 	}
 };
 
@@ -645,6 +634,8 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 				}, function () {
 					var param2 = conditionResult ? arr[2] : arr[3];
 					if (BigNumber.isBigNumber(param2)) {
+						cb(param2);
+					} else if (typeof param2 === 'boolean') {
 						cb(param2);
 					} else {
 						evaluate(param2, function (res) {
