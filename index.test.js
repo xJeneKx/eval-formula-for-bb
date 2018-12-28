@@ -541,7 +541,7 @@ test('validate datafeed error', t => {
 
 test('validate 1 + datafeed ok', t => {
 	validateFormula("1 + data_feed[oracles=\"this address\", feed_name=\"test\"]", 0, res => {
-		t.deepEqual(res.error, false);
+		t.deepEqual(res.error, true);
 	});
 });
 

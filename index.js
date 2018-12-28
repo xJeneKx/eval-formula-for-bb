@@ -15,10 +15,8 @@ exports.validate = function (formula, complexity, callback) {
 	} catch (e) {
 		return callback({error: 'Incorrect formula', complexity});
 	}
-	var error = false;
 	
 	function evaluate(arr, cb) {
-		if (error) return;
 		var op = arr[0];
 		switch (op) {
 			case '+':
@@ -31,7 +29,11 @@ exports.validate = function (formula, complexity, callback) {
 						cb2();
 					} else {
 						evaluate(param, function (res) {
-							cb2(!res);
+							if (BigNumber.isBigNumber(res)) {
+								cb2(!(res.eq(0)));
+							} else {
+								cb2(true);
+							}
 						});
 					}
 				}, function (error) {
@@ -96,7 +98,7 @@ exports.validate = function (formula, complexity, callback) {
 					} else if (typeof param === 'boolean') {
 						cb2();
 					} else if(typeof param === 'string' || (param.type && param.type === 'string')){
-						cb();
+						cb2();
 					} else {
 						evaluate(param, function (res) {
 							cb2(!res);
@@ -115,7 +117,6 @@ exports.validate = function (formula, complexity, callback) {
 				if (!result.error) {
 					cb(true);
 				} else {
-					error = true;
 					cb(false);
 				}
 				break;
@@ -124,17 +125,35 @@ exports.validate = function (formula, complexity, callback) {
 				if (validInputAndOutput(arr[1])) {
 					cb(true);
 				} else {
-					error = true;
 					cb(false);
 				}
 				break;
 			case 'concat':
-				cb(true);
+				async.eachSeries(arr.slice(1), function (param, cb2) {
+					if (BigNumber.isBigNumber(param)) {
+						cb2();
+					} else if (param.value) {
+						cb2();
+					} else {
+						evaluate(param, function (res) {
+							if (BigNumber.isBigNumber(res)) {
+								cb2();
+							} else if (res.value) {
+								cb2();
+							}else if(typeof res === 'string'){
+								cb2();
+							}else{
+								cb2('Incorrect concat');
+							}
+						});
+					}
+				}, function (err) {
+					cb(!err);
+				});
 				break;
 			default:
 				if (BigNumber.isBigNumber(arr[0])) return cb(true);
 				if (typeof arr[0] === 'boolean') return cb(true);
-				error = true;
 				cb(false);
 				break;
 		}
@@ -175,7 +194,7 @@ function validInputAndOutput(params) {
 }
 
 function validDataFeed(arr) {
-	var complexity = 0
+	var complexity = 0;
 	if (arr['oracles'] && arr['feed_name']) {
 		for (var k in arr) {
 			var operator = arr[k].operator;
@@ -224,7 +243,7 @@ function validDataFeed(arr) {
 exports.evaluate = function (conn, formula, messages, objValidationState, address, callback) {
 	var parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
 	parser.feed(formula);
-	
+	var fatal_error = false;
 	function evaluate(arr, cb) {
 		var op = arr[0];
 		switch (op) {
@@ -251,7 +270,7 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 						f = 'pow';
 						break;
 					default:
-						return cb(false);
+						throw Error('Incorrect op code');
 				}
 				var prevV;
 				async.eachSeries(arr.slice(1), function (param, cb2) {
@@ -261,7 +280,7 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 						} else  {
 							prevV = prevV[f](param);
 						}
-						cb2(null, prevV);
+						cb2(null);
 					} else {
 						evaluate(param, function (res) {
 							if(BigNumber.isBigNumber(res)) {
@@ -270,8 +289,9 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 								} else {
 									prevV = prevV[f](res);
 								}
-								cb2(null, prevV);
+								cb2(null);
 							} else {
+								fatal_error = true;
 								cb2('incorrect res')
 							}
 							
@@ -295,6 +315,7 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 						if(BigNumber.isBigNumber(res)) {
 							cb(new BigNumber(Math[op](res.toNumber())));
 						}else{
+							fatal_error = true;
 							cb(false);
 						}
 					});
@@ -308,6 +329,7 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 						if(BigNumber.isBigNumber(res)) {
 							cb(res.sqrt());
 						} else {
+							fatal_error = true;
 							cb(false);
 						}
 					});
@@ -319,23 +341,27 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 				var roundingMode;
 				switch (op) {
 					case 'ceil':
-						roundingMode = 2;
+						roundingMode = BigNumber.ROUND_CEIL;
 						break;
 					case 'floor':
-						roundingMode = 3;
+						roundingMode = BigNumber.ROUND_FLOOR;
 						break;
 					case 'round':
-						roundingMode = 6;
+						roundingMode = BigNumber.ROUND_HALF_EVEN;
 						break;
 					default:
-						cb(false);
-						break;
+						throw Error('Incorrect op code');
 				}
 				if (BigNumber.isBigNumber(arr[1])) {
 					cb(arr[1].dp(0, roundingMode));
 				} else {
 					evaluate(arr[1], function (res) {
-						cb(res.dp(0, roundingMode));
+						if(BigNumber.isBigNumber(res)) {
+							cb(res.dp(0, roundingMode));
+						}else{
+							fatal_error = true;
+							cb(false);
+						}
 					});
 				}
 				break;
@@ -344,19 +370,23 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 				async.eachSeries(arr[1], function (param, cb2) {
 					if (BigNumber.isBigNumber(param)) {
 						vals.push(param);
-						cb2(null);
+						cb2();
 					} else {
 						evaluate(param, function (res) {
 							if(BigNumber.isBigNumber(res)) {
 								vals.push(res);
-								cb2(null);
+								cb2();
 							} else {
+								fatal_error = true;
 								cb2('Incorrect min');
 							}
 						});
 					}
 				}, function (err) {
-					if(err) return cb(false);
+					if(err) {
+						fatal_error = true;
+						return cb(false);
+					}
 					cb(vals.reduce(function (a, b) {
 						return BigNumber.min(a, b);
 					}));
@@ -367,19 +397,23 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 				async.eachSeries(arr[1], function (param, cb2) {
 					if (BigNumber.isBigNumber(param)) {
 						vals.push(param);
-						cb2(null);
+						cb2();
 					} else {
 						evaluate(param, function (res) {
 							if(BigNumber.isBigNumber(res)) {
 								vals.push(res);
-								cb2('Incorrect max');
+								cb2();
 							} else {
+								fatal_error = true;
+								cb2('Incorrect max');
 							}
-							cb2(null);
 						});
 					}
 				}, function (err) {
-					if(err) return cb(false);
+					if(err) {
+						fatal_error = true;
+						return cb(false);
+					}
 					cb(vals.reduce(function (a, b) {
 						return BigNumber.max(a, b);
 					}));
@@ -390,21 +424,22 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 				async.eachSeries(arr.slice(1), function (param, cb2) {
 					if (BigNumber.isBigNumber(param)) {
 						prevV = prevV && !(param.eq(0));
-						cb2(null, prevV);
+						cb2(null);
 					} else if(param.type && param.type === 'string'){
-						prevV = prevV || !!(param.value.slice(1,-1));
+						prevV = prevV || !!(lexerStringToString(param.value));
 					} else {
 						evaluate(param, function (res) {
 							if(typeof res === 'boolean'){
 								prevV = prevV && res;
-								cb2(null, prevV);
+								cb2(null);
 							} else if(BigNumber.isBigNumber(res)) {
 								prevV = prevV && !(res.eq(0));
-								cb2(null, prevV);
+								cb2(null);
 							} else if(res.type && res.type === 'string'){
-								prevV = prevV || !!(res.value.slice(1,-1));
-								cb2(null, prevV);
+								prevV = prevV || !!(lexerStringToString(res.value));
+								cb2(null);
 							} else {
+								fatal_error = true;
 								cb2('Incorrect and');
 							}
 						});
@@ -420,7 +455,7 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 						prevV = prevV || !(param.eq(0));
 						cb2(null);
 					} else if(param.type && param.type === 'string'){
-						prevV = prevV || !!(param.value.slice(1,-1));
+						prevV = prevV || !!(lexerStringToString(param.value));
 						cb(null);
 					} else {
 						evaluate(param, function (res) {
@@ -431,9 +466,10 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 								prevV = prevV || !(res.eq(0));
 								cb2(null);
 							} else if(res.type && res.type === 'string') {
-								prevV = prevV || !!(res.value.slice(1, -1));
+								prevV = prevV || !!(lexerStringToString(res.value));
 								cb2(null);
 							} else {
+								fatal_error = true;
 								cb2('Incorrect or');
 							}
 						});
@@ -448,38 +484,37 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 				var param1 = arr[2];
 				var param2 = arr[3];
 				async.eachOfSeries([param1, param2], function (param, index, cb2) {
-					if (BigNumber.isBigNumber(param)) {
-						vals['val' + (index + 1)] = param;
-						cb2();
-					} else if (typeof param === 'string'){
-						vals['val' + (index + 1)] = param;
+					if (BigNumber.isBigNumber(param) || typeof param === 'string') {
+						vals[index] = param;
 						cb2();
 					} else {
 						evaluate(param, function (res) {
-							vals['val' + (index + 1)] = res;
+							vals[index] = res;
 							cb2();
 						});
 					}
 				}, function () {
-					var val1 = vals.val1;
-					var val2 = vals.val2;
+					var val1 = vals[0];
+					var val2 = vals[1];
 					if(typeof val1 === 'boolean' || typeof val2 === 'boolean'){
 						if(typeof val1 !== 'boolean'){
 							if(BigNumber.isBigNumber(val1)) {
 								val1 = !(val1.eq(0));
 							} else if(typeof val1 === "string"){
-								val1 = !!val1.slice(1, -1);
+								val1 = !!lexerStringToString(val1);
 							}else{
-								cb(false);
+								fatal_error = true;
+								return cb(false);
 							}
 						}
 						if(typeof val2 !== 'boolean'){
 							if(BigNumber.isBigNumber(val2)) {
 								val2 = !(val2.eq(0));
 							} else if(typeof val2 === "string"){
-								val2 = !!val2.slice(1, -1);
+								val2 = !!lexerStringToString(val2);
 							}else{
-								cb(false);
+								fatal_error = true;
+								return cb(false);
 							}
 						}
 						switch (operator) {
@@ -500,12 +535,12 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 						if(BigNumber.isBigNumber(val1)) {
 							val1 = val1.toString();
 						} else{
-							val1 = val1.slice(1, -1);
+							val1 = lexerStringToString(val1);
 						}
 						if(BigNumber.isBigNumber(val2)) {
 							val2 = val2.toString();
 						}else{
-							val2 = val2.slice(1, -1);
+							val2 = lexerStringToString(val2);
 						}
 						switch (operator) {
 							case '==':
@@ -537,6 +572,7 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 								return cb(val1.lt(val2));
 						}
 					} else {
+						fatal_error = true;
 						return cb(false);
 					}
 				});
@@ -554,19 +590,27 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 						evaluate(param, function (res) {
 							if(typeof res === 'boolean') {
 								conditionResult = res;
+								cb2();
 							}else if(BigNumber.isBigNumber(res)){
 								conditionResult = !(res.eq(0));
+								cb2();
 							}else if(typeof res === 'string'){
 								conditionResult = !!res;
+								cb2();
 							} else if(res.type && res.type === 'string'){
-								cb(!!res);
+								conditionResult = !!res.value;
+								cb2();
 							} else{
-								cb(false);
+								fatal_error = true;
+								cb2('Incorrect res');
 							}
-							cb2();
 						});
 					}
-				}, function () {
+				}, function (error) {
+					if(error){
+						fatal_error = true;
+						return cb(false);
+					}
 					var param2 = conditionResult ? arr[2] : arr[3];
 					if (BigNumber.isBigNumber(param2)) {
 						cb(param2);
@@ -575,10 +619,21 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 					} else if(typeof param2 === 'string'){
 						cb(param2);
 					} else if(param2.type && param2.type === 'string'){
-						cb(param2.value.slice(1,-1));
+						cb(lexerStringToString(param2.value));
 					} else {
 						evaluate(param2, function (res) {
-							cb(res);
+							if (BigNumber.isBigNumber(res)) {
+								cb(res);
+							} else if (typeof res === 'boolean') {
+								cb(res);
+							} else if(typeof res === 'string'){
+								cb(res);
+							} else if(res.type && res.type === 'string'){
+								cb(lexerStringToString(res.value));
+							}else{
+								fatal_error = true;
+								cb(false);
+							}
 						});
 					}
 				});
@@ -663,7 +718,10 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 				}
 				
 				getDataFeed(arr[1], function (err, result) {
-					if (err) return callback(false);
+					if (err) {
+						fatal_error = true;
+						return cb(false);
+					}
 					cb(result);
 				});
 				break;
@@ -738,7 +796,10 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 				}
 				
 				var result = findOutputOrInputAndReturnName(arr[1]);
-				if (result === '') return callback(false);
+				if (result === '') {
+					fatal_error = true;
+					cb(false);
+				}
 				if (arr[2] === 'amount') {
 					cb(new BigNumber(result['amount']));
 				} else if (arr[2] === 'asset') {
@@ -756,20 +817,23 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 						result += param.toString();
 						cb2();
 					} else if (param.value) {
-						result += param.value.slice(1,-1);
+						result += lexerStringToString(param.value);
 						cb2();
 					} else {
 						evaluate(param, function (res) {
 							if (BigNumber.isBigNumber(res)) {
 								result += res.toString();
+								cb2();
 							} else if (res.value) {
-								result += res.value.slice(1,-1);
+								result += lexerStringToString(res.value);
+								cb2();
 							}else if(typeof res === 'string'){
 								result += res;
+								cb2();
 							}else{
-								cb2('Incorrect concat');
+								fatal_error = true;
+								cb2('Incorrect res');
 							}
-							cb2();
 						});
 					}
 				}, function (err) {
@@ -786,8 +850,18 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 		}
 	}
 	if(parser.results.length === 1 && parser.results[0]) {
-		evaluate(parser.results[0], res => {callback(res)});
+		evaluate(parser.results[0], res => {
+			if(fatal_error) {
+				callback(false);
+			}else{
+				callback(res);
+			}
+		});
 	} else {
 		callback(false);
 	}
 };
+
+function lexerStringToString(string){
+	return string.slice(1,-1).replace('\\\'', "'").replace("\\\"", '"');
+}

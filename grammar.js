@@ -134,7 +134,7 @@ var grammar = {
         		if(BigNumber.isBigNumber(value)){
         			params[name]['value'] = value;
         		}else{
-        			params[name]['value'] = decodeURI(value.value.slice(1, -1));
+        			params[name]['value'] = value.value.slice(1, -1).replace('\\\'', "'").replace("\\\"", '"');
         		}
         	}
         	return ['data_feed', params]
