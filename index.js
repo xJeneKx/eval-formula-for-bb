@@ -95,6 +95,8 @@ exports.validate = function (formula, complexity, callback) {
 						cb2();
 					} else if (typeof param === 'boolean') {
 						cb2();
+					} else if(typeof param === 'string' || (param.type && param.type === 'string')){
+						cb();
 					} else {
 						evaluate(param, function (res) {
 							cb2(!res);
@@ -622,7 +624,9 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 								conditionResult = !(res.eq(0));
 							}else if(typeof res === 'string'){
 								conditionResult = !!res;
-							}else{
+							} else if(res.type && res.type === 'string'){
+								cb(!!res);
+							} else{
 								throw Error('Incorrect ternary');
 							}
 							cb2();
@@ -634,7 +638,7 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 						cb(param2);
 					} else if (typeof param2 === 'boolean') {
 						cb(param2);
-					}else if(param2.type && param2.type === 'string'){
+					} else if(param2.type && param2.type === 'string'){
 						cb(param2.value.slice(1,-1));
 					} else {
 						evaluate(param2, function (res) {
