@@ -541,7 +541,7 @@ test('validate datafeed error', t => {
 
 test('validate 1 + datafeed ok', t => {
 	validateFormula("1 + data_feed[oracles=\"this address\", feed_name=\"test\"]", 0, res => {
-		t.deepEqual(res.error, true);
+		t.deepEqual(res.error, false);
 	});
 });
 
@@ -572,5 +572,17 @@ test('validate ternary ok', t => {
 test('validate 1 + datafeed error', t => {
 	validateFormula("max(data_feed[oracles=\"this address\"], 2)", 0, res => {
 		t.deepEqual(res.error, true);
+	})
+});
+
+test('validate 1 + datafeed error', t => {
+	validateFormula("1 = 1", 0, res => {
+		t.deepEqual(res.error, true);
+	})
+});
+
+test('inp', t => {
+	validateFormula("input[address=this address, amount>10].amount", 0, res => {
+		t.deepEqual(res.error, false);
 	})
 });

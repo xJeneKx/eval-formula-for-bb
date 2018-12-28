@@ -29,11 +29,7 @@ exports.validate = function (formula, complexity, callback) {
 						cb2();
 					} else {
 						evaluate(param, function (res) {
-							if (BigNumber.isBigNumber(res)) {
-								cb2(!(res.eq(0)));
-							} else {
-								cb2(true);
-							}
+							cb2(!res);
 						});
 					}
 				}, function (error) {
@@ -79,7 +75,8 @@ exports.validate = function (formula, complexity, callback) {
 			case 'and':
 			case 'or':
 			case 'comparison':
-				async.eachSeries(arr.slice(1), function (param, cb2) {
+				if(arr[1] === '=') return cb(false);
+				async.eachSeries(arr.slice(2), function (param, cb2) {
 					if (BigNumber.isBigNumber(param)) {
 						cb2();
 					} else {
@@ -95,9 +92,7 @@ exports.validate = function (formula, complexity, callback) {
 				async.eachSeries(arr.slice(1), function (param, cb2) {
 					if (BigNumber.isBigNumber(param)) {
 						cb2();
-					} else if (typeof param === 'boolean') {
-						cb2();
-					} else if(typeof param === 'string' || (param.type && param.type === 'string')){
+					} else if(param.type && param.type === 'string') {
 						cb2();
 					} else {
 						evaluate(param, function (res) {
@@ -132,19 +127,11 @@ exports.validate = function (formula, complexity, callback) {
 				async.eachSeries(arr.slice(1), function (param, cb2) {
 					if (BigNumber.isBigNumber(param)) {
 						cb2();
-					} else if (param.value) {
+					} else if (param.type && param.type === 'string') {
 						cb2();
 					} else {
 						evaluate(param, function (res) {
-							if (BigNumber.isBigNumber(res)) {
-								cb2();
-							} else if (res.value) {
-								cb2();
-							}else if(typeof res === 'string'){
-								cb2();
-							}else{
-								cb2('Incorrect concat');
-							}
+							cb2(!res);
 						});
 					}
 				}, function (err) {
@@ -173,7 +160,7 @@ function validInputAndOutput(params) {
 	for (var k in params) {
 		var operator = params[k].operator;
 		var value = params[k].value;
-		if (value.substr(-1) === ",") value = value.substr(0, value.length - 1);
+		if(BigNumber.isBigNumber(value)) value = value.toString();
 		switch (k) {
 			case 'address':
 				if (operator !== '=' && operator !== '!=') return false;
@@ -199,6 +186,7 @@ function validDataFeed(arr) {
 		for (var k in arr) {
 			var operator = arr[k].operator;
 			var value = arr[k].value;
+			if(BigNumber.isBigNumber(value)) value = value.toString();
 			switch (k) {
 				case 'oracles':
 					if (operator !== '=') return {error: true, complexity};
@@ -269,8 +257,6 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 					case '^':
 						f = 'pow';
 						break;
-					default:
-						throw Error('Incorrect op code');
 				}
 				var prevV;
 				async.eachSeries(arr.slice(1), function (param, cb2) {
@@ -349,8 +335,6 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 					case 'round':
 						roundingMode = BigNumber.ROUND_HALF_EVEN;
 						break;
-					default:
-						throw Error('Incorrect op code');
 				}
 				if (BigNumber.isBigNumber(arr[1])) {
 					cb(arr[1].dp(0, roundingMode));
@@ -482,6 +466,10 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 			case 'comparison':
 				var vals = [];
 				var operator = arr[1];
+				if(operator === '='){
+					fatal_error = true;
+					return cb(false);
+				}
 				var param1 = arr[2];
 				var param2 = arr[3];
 				async.eachOfSeries([param1, param2], function (param, index, cb2) {
@@ -864,5 +852,5 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 };
 
 function lexerStringToString(string){
-	return string.slice(1,-1).replace('\\\'', "'").replace("\\\"", '"');
+	return string.slice(1,-1).replace('\\\'', "'").replace("\\\"", '"').replace("\\", '');
 }

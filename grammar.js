@@ -8,8 +8,8 @@ function id(x) { return x[0]; }
 
 	var lexer = moo.compile({
 		string: [
-			{match: /"(?:\\["\\rn]|[^"\\])*?"/, lineBreaks: true},
-			{match: /'(?:\\['\\rn]|[^'\\])*?'/, lineBreaks: true}
+			{match: /"(?:\\["\\rn]|[\\\rn]|[^"\\])*?"/, lineBreaks: true},
+			{match: /'(?:\\['\\rn]|[\\\rn]|[^'\\])*?'/, lineBreaks: true}
 		],
 		WS: {match: /[\s]+/, lineBreaks: true},
 		digits: /-?(?:[0-9]|[1-9][0-9]+)(?:\.[0-9]+)?(?:[eE][-+]?[0-9]+)?\b/,
@@ -133,8 +133,8 @@ var grammar = {
         		params[name]['operator'] = operator;
         		if(BigNumber.isBigNumber(value)){
         			params[name]['value'] = value;
-        		}else{
-        			params[name]['value'] = value.value.slice(1, -1).replace('\\\'', "'").replace("\\\"", '"');
+        		} else {
+        			params[name]['value'] = value.value.slice(1, -1).replace('\\\'', "'").replace("\\\"", '"').replace("\\", '');
         		}
         	}
         	return ['data_feed', params]
