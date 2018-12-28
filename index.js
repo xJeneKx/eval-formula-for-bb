@@ -280,7 +280,7 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 						} else  {
 							prevV = prevV[f](param);
 						}
-						cb2(null);
+						cb2();
 					} else {
 						evaluate(param, function (res) {
 							if(BigNumber.isBigNumber(res)) {
@@ -289,7 +289,7 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 								} else {
 									prevV = prevV[f](res);
 								}
-								cb2(null);
+								cb2();
 							} else {
 								fatal_error = true;
 								cb2('incorrect res')
@@ -424,20 +424,21 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 				async.eachSeries(arr.slice(1), function (param, cb2) {
 					if (BigNumber.isBigNumber(param)) {
 						prevV = prevV && !(param.eq(0));
-						cb2(null);
+						cb2();
 					} else if(param.type && param.type === 'string'){
 						prevV = prevV || !!(lexerStringToString(param.value));
+						cb2();
 					} else {
 						evaluate(param, function (res) {
 							if(typeof res === 'boolean'){
 								prevV = prevV && res;
-								cb2(null);
+								cb2();
 							} else if(BigNumber.isBigNumber(res)) {
 								prevV = prevV && !(res.eq(0));
-								cb2(null);
+								cb2();
 							} else if(res.type && res.type === 'string'){
 								prevV = prevV || !!(lexerStringToString(res.value));
-								cb2(null);
+								cb2();
 							} else {
 								fatal_error = true;
 								cb2('Incorrect and');
@@ -453,21 +454,21 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 				async.eachSeries(arr.slice(1), function (param, cb2) {
 					if (BigNumber.isBigNumber(param)) {
 						prevV = prevV || !(param.eq(0));
-						cb2(null);
+						cb2();
 					} else if(param.type && param.type === 'string'){
 						prevV = prevV || !!(lexerStringToString(param.value));
-						cb(null);
+						cb2();
 					} else {
 						evaluate(param, function (res) {
 							if(typeof res === 'boolean'){
 								prevV = prevV || res;
-								cb2(null);
+								cb2();
 							} else if(BigNumber.isBigNumber(res)) {
 								prevV = prevV || !(res.eq(0));
-								cb2(null);
+								cb2();
 							} else if(res.type && res.type === 'string') {
 								prevV = prevV || !!(lexerStringToString(res.value));
-								cb2(null);
+								cb2();
 							} else {
 								fatal_error = true;
 								cb2('Incorrect or');
@@ -479,7 +480,7 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 				});
 				break;
 			case 'comparison':
-				var vals = {val1: '', val2: ''};
+				var vals = [];
 				var operator = arr[1];
 				var param1 = arr[2];
 				var param2 = arr[3];
