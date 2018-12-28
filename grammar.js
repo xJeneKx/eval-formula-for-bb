@@ -69,6 +69,7 @@ var grammar = {
     {"name": "expr", "symbols": [(lexer.has("string") ? {type: "string"} : string)], "postprocess": id},
     {"name": "expr2", "symbols": ["AS", "comparisonOperator", "AS"], "postprocess": function(d) {return ['comparison', d[1], d[0], d[2]];}},
     {"name": "expr2", "symbols": ["AS"], "postprocess": id},
+    {"name": "expr2", "symbols": [(lexer.has("string") ? {type: "string"} : string)], "postprocess": id},
     {"name": "comparisonOperator", "symbols": [(lexer.has("comparisonOperators") ? {type: "comparisonOperators"} : comparisonOperators)], "postprocess": function(d) { return d[0].value }},
     {"name": "P", "symbols": [(lexer.has("l") ? {type: "l"} : l), "expr", (lexer.has("r") ? {type: "r"} : r)], "postprocess": function(d) {return d[1]; }},
     {"name": "P", "symbols": ["N"], "postprocess": id},
@@ -133,7 +134,7 @@ var grammar = {
         		if(BigNumber.isBigNumber(value)){
         			params[name]['value'] = value;
         		}else{
-        			params[name]['value'] = value.value.slice(1, -1);
+        			params[name]['value'] = decodeURI(value.value.slice(1, -1));
         		}
         	}
         	return ['data_feed', params]

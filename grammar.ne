@@ -67,6 +67,7 @@ expr -> (%string|AS) %concat expr {% function(d) {return ['concat', d[0][0], d[2
 
 expr2 -> AS comparisonOperator AS {% function(d) {return ['comparison', d[1], d[0], d[2]];}%}
 	| AS {% id %}
+	| %string {% id %}
 
 comparisonOperator -> %comparisonOperators {% function(d) { return d[0].value } %}
 
@@ -115,7 +116,7 @@ N -> float          {% id %}
 			if(BigNumber.isBigNumber(value)){
 				params[name]['value'] = value;
 			}else{
-				params[name]['value'] = value.value.slice(1, -1);
+				params[name]['value'] = decodeURI(value.value.slice(1, -1));
 			}
 		}
 		return ['data_feed', params]
