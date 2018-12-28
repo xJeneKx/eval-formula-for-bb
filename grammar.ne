@@ -141,5 +141,4 @@ N -> float          {% id %}
 
 float -> %digits           {% function(d,l, reject) { return new BigNumber(d[0]); }%}
 
-value -> AS {% id %}
 string -> %string        {% function(d) {return d[0].value; } %}

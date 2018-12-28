@@ -138,7 +138,7 @@ exports.validate = function (formula, complexity, callback) {
 		}
 	}
 	
-	if (parser.results[0]) {
+	if(parser.results.length === 1 && parser.results[0]) {
 		evaluate(parser.results[0], res => {
 			callback({complexity, error: !res});
 		});
@@ -487,9 +487,6 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 					}));
 				});
 				break;
-			case 'pi':
-				cb(new BigNumber(Math.PI));
-				break;
 			case 'and':
 				var prevV = true;
 				async.eachSeries(arr.slice(1), function (param, cb2) {
@@ -637,12 +634,17 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 						cb(param2);
 					} else if (typeof param2 === 'boolean') {
 						cb(param2);
+					}else if(param2.type && param2.type === 'string'){
+						cb(param2.value.slice(1,-1));
 					} else {
 						evaluate(param2, function (res) {
 							cb(res);
 						});
 					}
 				});
+				break;
+			case 'pi':
+				cb(new BigNumber(Math.PI));
 				break;
 			case 'e':
 				cb(new BigNumber(Math.E));
@@ -838,10 +840,14 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 				if (BigNumber.isBigNumber(arr[0])) return cb(arr[0]);
 				if (BigNumber.isBigNumber(arr)) return cb(arr);
 				if (typeof arr[0] === 'boolean') return cb(arr[0]);
+				if (arr.type && arr.type === 'string') return cb(arr);
 				throw new Error('Incorrect formula: ' + arr);
 				break;
 		}
 	}
-	
-	evaluate(parser.results[0], res => {callback(res)});
+	if(parser.results.length === 1 && parser.results[0]) {
+		evaluate(parser.results[0], res => {callback(res)});
+	} else {
+		throw Error('Incorrect formula');
+	}
 };

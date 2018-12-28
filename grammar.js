@@ -165,7 +165,6 @@ var grammar = {
         	return [d[0][0].value, params, d[2].value]
         }},
     {"name": "float", "symbols": [(lexer.has("digits") ? {type: "digits"} : digits)], "postprocess": function(d,l, reject) { return new BigNumber(d[0]); }},
-    {"name": "value", "symbols": ["AS"], "postprocess": id},
     {"name": "string", "symbols": [(lexer.has("string") ? {type: "string"} : string)], "postprocess": function(d) {return d[0].value; }}
 ]
   , ParserStart: "main"

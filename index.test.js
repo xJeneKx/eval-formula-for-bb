@@ -499,6 +499,17 @@ test('formula - datafeed7', t => {
 	});
 });
 
+test('formula - datafeed8', t => {
+	let db = {};
+	db.query = function (query, params, cb) {
+		let rows = [{value: null, int_value: 10}];
+		cb(rows);
+	};
+	evalFormula("1 + data_feed[oracles=\"MXMEKGN37H5QO2AWHT7XRG6LHJVVTAWU:this address\", feed_name='t,e(s)[],\\'t', ifseveral=\"last\", mci > 10]", db, objValidationState.arrAugmentedMessages, objValidationState, 0, res => {
+		t.deepEqual(res.eq(11), true);
+	});
+});
+
 test('validate 1 + 1', t => {
 	validateFormula("1 + 1", 0, res => {
 		t.deepEqual(res.error, false);
@@ -538,6 +549,12 @@ test('validate round ok', t => {
 test('validate min ok', t => {
 	evalFormula("min(1 + (1 + 1) - 1, 2)", 0, 0, 0, 0, res => {
 		t.deepEqual(res.eq(2), true);
+	})
+});
+
+test('validate ternary ok', t => {
+	evalFormula("1 == 1 ? 'ok' : '!ok'", 0, 0, 0, 0, res => {
+		t.deepEqual(res, 'ok');
 	})
 });
 
