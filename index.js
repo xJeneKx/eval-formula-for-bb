@@ -638,6 +638,8 @@ exports.evaluate = function (formula, conn, messages, objValidationState, addres
 						cb(param2);
 					} else if (typeof param2 === 'boolean') {
 						cb(param2);
+					} else if(typeof param2 === 'string'){
+						cb(param2);
 					} else if(param2.type && param2.type === 'string'){
 						cb(param2.value.slice(1,-1));
 					} else {
