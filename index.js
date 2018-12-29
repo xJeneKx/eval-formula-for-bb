@@ -7,11 +7,25 @@ var constants = require('byteballcore/constants');
 
 BigNumber.config({EXPONENTIAL_AT: [-30, 30], POW_PRECISION: 100, RANGE: 100});
 
+var cacheLimit = 100;
+var formulasInCache = [];
+var cache = {};
+
 exports.validate = function (formula, complexity, callback) {
 	complexity++;
 	var parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
 	try {
-		parser.feed(formula);
+		if(cache[formula]){
+			parser.results = cache[formula];
+		}else {
+			parser.feed(formula);
+			if(formulasInCache.length > cacheLimit){
+				var f = formulasInCache.shift();
+				delete cache[f];
+			}
+			formulasInCache.push(formula);
+			cache[formula] = parser.results;
+		}
 	} catch (e) {
 		return callback({error: 'Incorrect formula', complexity});
 	}
@@ -238,7 +252,17 @@ function validDataFeed(arr) {
 
 exports.evaluate = function (conn, formula, messages, objValidationState, address, callback) {
 	var parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
-	parser.feed(formula);
+	if(cache[formula]){
+		parser.results = cache[formula];
+	}else {
+		parser.feed(formula);
+		if(formulasInCache.length > cacheLimit){
+			var f = formulasInCache.shift();
+			delete cache[f];
+		}
+		formulasInCache.push(formula);
+		cache[formula] = parser.results;
+	}
 	var fatal_error = false;
 	
 	function evaluate(arr, cb) {
