@@ -17,137 +17,141 @@ exports.validate = function (formula, complexity, callback) {
 	}
 	
 	function evaluate(arr, cb) {
-		var op = arr[0];
-		switch (op) {
-			case '+':
-			case '-':
-			case '*':
-			case '/':
-			case '^':
-				async.eachSeries(arr.slice(1), function (param, cb2) {
-					if (BigNumber.isBigNumber(param)) {
-						cb2();
-					} else {
-						evaluate(param, function (res) {
-							cb2(!res);
-						});
-					}
-				}, function (error) {
-					cb(!error);
-				});
-				break;
-			case 'sin':
-			case 'cos':
-			case 'tan':
-			case 'asin':
-			case 'acos':
-			case 'atan':
-			case 'log':
-			case 'sqrt':
-			case 'ceil':
-			case 'floor':
-			case 'round':
-				if (BigNumber.isBigNumber(arr[1])) {
-					cb(true);
-				} else {
-					evaluate(arr[1], function (res) {
-						cb(!!res);
+		if (typeof arr === 'object' && !BigNumber.isBigNumber(arr)) {
+			var op = arr[0];
+			switch (op) {
+				case '+':
+				case '-':
+				case '*':
+				case '/':
+				case '^':
+					async.eachSeries(arr.slice(1), function (param, cb2) {
+						if (BigNumber.isBigNumber(param)) {
+							cb2();
+						} else {
+							evaluate(param, function (res) {
+								cb2(!res);
+							});
+						}
+					}, function (error) {
+						cb(!error);
 					});
-				}
-				break;
-			case 'min':
-			case 'max':
-				async.eachSeries(arr[1], function (param, cb2) {
-					if (BigNumber.isBigNumber(param)) {
-						cb2();
+					break;
+				case 'sin':
+				case 'cos':
+				case 'tan':
+				case 'asin':
+				case 'acos':
+				case 'atan':
+				case 'log':
+				case 'sqrt':
+				case 'ceil':
+				case 'floor':
+				case 'round':
+					if (BigNumber.isBigNumber(arr[1])) {
+						cb(true);
 					} else {
-						evaluate(param, function (res) {
-							cb2(!res);
+						evaluate(arr[1], function (res) {
+							cb(!!res);
 						});
 					}
-				}, function (error) {
-					cb(!error);
-				});
-				break;
-			case 'pi':
-				cb(true);
-				break;
-			case 'and':
-			case 'or':
-			case 'comparison':
-				if(arr[1] === '=') return cb(false);
-				async.eachSeries(arr.slice(2), function (param, cb2) {
-					if (BigNumber.isBigNumber(param)) {
-						cb2();
-					} else {
-						evaluate(param, function (res) {
-							cb2(!res);
-						});
-					}
-				}, function (error) {
-					cb(!error);
-				});
-				break;
-			case 'ternary':
-				async.eachSeries(arr.slice(1), function (param, cb2) {
-					if (BigNumber.isBigNumber(param)) {
-						cb2();
-					} else if(typeof param === 'string') {
-						cb2();
-					} else {
-						evaluate(param, function (res) {
-							cb2(!res);
-						});
-					}
-				}, function (error) {
-					cb(!error);
-				});
-				break;
-			case 'e':
-				cb(true);
-				break;
-			case 'data_feed':
-				var result = validDataFeed(arr[1]);
-				complexity += result.complexity;
-				if (!result.error) {
+					break;
+				case 'min':
+				case 'max':
+					async.eachSeries(arr[1], function (param, cb2) {
+						if (BigNumber.isBigNumber(param)) {
+							cb2();
+						} else {
+							evaluate(param, function (res) {
+								cb2(!res);
+							});
+						}
+					}, function (error) {
+						cb(!error);
+					});
+					break;
+				case 'pi':
 					cb(true);
-				} else {
-					cb(false);
-				}
-				break;
-			case 'input':
-			case 'output':
-				if (validInputAndOutput(arr[1])) {
+					break;
+				case 'and':
+				case 'or':
+				case 'comparison':
+					if (arr[1] === '=') return cb(false);
+					async.eachSeries(arr.slice(2), function (param, cb2) {
+						if (BigNumber.isBigNumber(param)) {
+							cb2();
+						} else {
+							evaluate(param, function (res) {
+								cb2(!res);
+							});
+						}
+					}, function (error) {
+						cb(!error);
+					});
+					break;
+				case 'ternary':
+					async.eachSeries(arr.slice(1), function (param, cb2) {
+						if (BigNumber.isBigNumber(param)) {
+							cb2();
+						} else if (typeof param === 'string') {
+							cb2();
+						} else {
+							evaluate(param, function (res) {
+								cb2(!res);
+							});
+						}
+					}, function (error) {
+						cb(!error);
+					});
+					break;
+				case 'e':
 					cb(true);
-				} else {
-					cb(false);
-				}
-				break;
-			case 'concat':
-				async.eachSeries(arr.slice(1), function (param, cb2) {
-					if (BigNumber.isBigNumber(param)) {
-						cb2();
-					} else if(typeof param === 'string') {
-						cb2();
+					break;
+				case 'data_feed':
+					var result = validDataFeed(arr[1]);
+					complexity += result.complexity;
+					if (!result.error) {
+						cb(true);
 					} else {
-						evaluate(param, function (res) {
-							cb2(!res);
-						});
+						cb(false);
 					}
-				}, function (err) {
-					cb(!err);
-				});
-				break;
-			default:
-				if (BigNumber.isBigNumber(arr)) return cb(true);
-				if (typeof arr === 'string') return cb(true);
-				if (typeof arr === 'boolean') return cb(true);
-				cb(false);
-				break;
+					break;
+				case 'input':
+				case 'output':
+					if (validInputAndOutput(arr[1])) {
+						cb(true);
+					} else {
+						cb(false);
+					}
+					break;
+				case 'concat':
+					async.eachSeries(arr.slice(1), function (param, cb2) {
+						if (BigNumber.isBigNumber(param)) {
+							cb2();
+						} else if (typeof param === 'string') {
+							cb2();
+						} else {
+							evaluate(param, function (res) {
+								cb2(!res);
+							});
+						}
+					}, function (err) {
+						cb(!err);
+					});
+					break;
+				default:
+					cb(false);
+					break;
+			}
+		} else {
+			if (BigNumber.isBigNumber(arr)) return cb(arr);
+			if (typeof arr === 'boolean') return cb(arr);
+			if (typeof arr === 'string') return cb(arr);
+			cb(false);
 		}
 	}
 	
-	if(parser.results.length === 1 && parser.results[0]) {
+	if (parser.results.length === 1 && parser.results[0]) {
 		evaluate(parser.results[0], res => {
 			callback({complexity, error: !res});
 		});
@@ -161,7 +165,7 @@ function validInputAndOutput(params) {
 	for (var k in params) {
 		var operator = params[k].operator;
 		var value = params[k].value;
-		if(BigNumber.isBigNumber(value)) value = value.toString();
+		if (BigNumber.isBigNumber(value)) value = value.toString();
 		if (operator === '==') return false;
 		switch (k) {
 			case 'address':
@@ -188,7 +192,7 @@ function validDataFeed(arr) {
 		for (var k in arr) {
 			var operator = arr[k].operator;
 			var value = arr[k].value;
-			if(BigNumber.isBigNumber(value)) value = value.toString();
+			if (BigNumber.isBigNumber(value)) value = value.toString();
 			if (operator === '==') return false;
 			switch (k) {
 				case 'oracles':
@@ -237,380 +241,382 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 	var parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
 	parser.feed(formula);
 	var fatal_error = false;
+	
 	function evaluate(arr, cb) {
-		var op = arr[0];
-		switch (op) {
-			case '+':
-			case '-':
-			case '*':
-			case '/':
-			case '^':
-				var f = '';
-				switch (op) {
-					case '+':
-						f = 'plus';
-						break;
-					case '-':
-						f = 'minus';
-						break;
-					case '*':
-						f = 'times';
-						break;
-					case '/':
-						f = 'div';
-						break;
-					case '^':
-						f = 'pow';
-						break;
-				}
-				var prevV;
-				async.eachSeries(arr.slice(1), function (param, cb2) {
-					if (BigNumber.isBigNumber(param)) {
-						if (prevV === undefined) {
-							prevV = param;
-						} else  {
-							prevV = prevV[f](param);
-						}
-						cb2();
-					} else {
-						evaluate(param, function (res) {
-							if(BigNumber.isBigNumber(res)) {
-								if (prevV === undefined) {
-									prevV = res;
-								} else {
-									prevV = prevV[f](res);
-								}
-								cb2();
+		if (typeof arr === 'object' && !BigNumber.isBigNumber(arr)) {
+			var op = arr[0];
+			switch (op) {
+				case '+':
+				case '-':
+				case '*':
+				case '/':
+				case '^':
+					var f = '';
+					switch (op) {
+						case '+':
+							f = 'plus';
+							break;
+						case '-':
+							f = 'minus';
+							break;
+						case '*':
+							f = 'times';
+							break;
+						case '/':
+							f = 'div';
+							break;
+						case '^':
+							f = 'pow';
+							break;
+					}
+					var prevV;
+					async.eachSeries(arr.slice(1), function (param, cb2) {
+						if (BigNumber.isBigNumber(param)) {
+							if (prevV === undefined) {
+								prevV = param;
 							} else {
-								fatal_error = true;
-								cb2('incorrect res')
+								prevV = prevV[f](param);
 							}
-							
-						});
-					}
-				}, function (err) {
-					cb(err ? false : prevV);
-				});
-				break;
-			case 'sin':
-			case 'cos':
-			case 'tan':
-			case 'asin':
-			case 'acos':
-			case 'atan':
-			case 'log':
-				if (BigNumber.isBigNumber(arr[1])) {
-					cb(new BigNumber(Math[op](arr[1].toNumber())));
-				} else {
-					evaluate(arr[1], function (res) {
-						if(BigNumber.isBigNumber(res)) {
-							cb(new BigNumber(Math[op](res.toNumber())));
-						}else{
-							fatal_error = true;
-							cb(false);
-						}
-					});
-				}
-				break;
-			case 'sqrt':
-				if (BigNumber.isBigNumber(arr[1])) {
-					cb(arr[1].sqrt());
-				} else {
-					evaluate(arr[1], function (res) {
-						if(BigNumber.isBigNumber(res)) {
-							cb(res.sqrt());
-						} else {
-							fatal_error = true;
-							cb(false);
-						}
-					});
-				}
-				break;
-			case 'ceil':
-			case 'floor':
-			case 'round':
-				var roundingMode;
-				switch (op) {
-					case 'ceil':
-						roundingMode = BigNumber.ROUND_CEIL;
-						break;
-					case 'floor':
-						roundingMode = BigNumber.ROUND_FLOOR;
-						break;
-					case 'round':
-						roundingMode = BigNumber.ROUND_HALF_EVEN;
-						break;
-				}
-				if (BigNumber.isBigNumber(arr[1])) {
-					cb(arr[1].dp(0, roundingMode));
-				} else {
-					evaluate(arr[1], function (res) {
-						if(BigNumber.isBigNumber(res)) {
-							cb(res.dp(0, roundingMode));
-						}else{
-							fatal_error = true;
-							cb(false);
-						}
-					});
-				}
-				break;
-			case 'min':
-			case 'max':
-				var vals = [];
-				async.eachSeries(arr[1], function (param, cb2) {
-					if (BigNumber.isBigNumber(param)) {
-						vals.push(param);
-						cb2();
-					} else {
-						evaluate(param, function (res) {
-							if(BigNumber.isBigNumber(res)) {
-								vals.push(res);
-								cb2();
-							} else {
-								fatal_error = true;
-								cb2('Incorrect ' + op);
-							}
-						});
-					}
-				}, function (err) {
-					if(err) {
-						fatal_error = true;
-						return cb(false);
-					}
-					if(op === 'min') {
-						return cb(BigNumber.min.apply(null, vals));
-					}else{
-						return cb(BigNumber.max.apply(null, vals))
-					}
-				});
-				break;
-			case 'and':
-				var prevV = true;
-				async.eachSeries(arr.slice(1), function (param, cb2) {
-					if(typeof param === 'boolean'){
-						prevV = prevV && param;
-						cb2();
-					} else if (BigNumber.isBigNumber(param)) {
-						prevV = prevV && !(param.eq(0));
-						cb2();
-					} else if(typeof param === 'string'){
-						prevV = prevV && !!param;
-						cb2();
-					} else {
-						evaluate(param, function (res) {
-							if(typeof res === 'boolean'){
-								prevV = prevV && res;
-								cb2();
-							} else if(BigNumber.isBigNumber(res)) {
-								prevV = prevV && !(res.eq(0));
-								cb2();
-							} else if(typeof res === 'string'){
-								prevV = prevV && !!res;
-								cb2();
-							} else {
-								fatal_error = true;
-								cb2('Incorrect and');
-							}
-						});
-					}
-				}, function (err) {
-					cb(!err ? prevV : false);
-				});
-				break;
-			case 'or':
-				var prevV = false;
-				async.eachSeries(arr.slice(1), function (param, cb2) {
-					if(typeof param === 'boolean'){
-						prevV = prevV && param;
-						cb2();
-					} else if (BigNumber.isBigNumber(param)) {
-						prevV = prevV || !(param.eq(0));
-						cb2();
-					} else if(typeof param === 'string'){
-						prevV = prevV || !!param;
-						cb2();
-					} else {
-						evaluate(param, function (res) {
-							if(typeof res === 'boolean'){
-								prevV = prevV || res;
-								cb2();
-							} else if(BigNumber.isBigNumber(res)) {
-								prevV = prevV || !(res.eq(0));
-								cb2();
-							} else if(typeof res === 'string') {
-								prevV = prevV || !!res;
-								cb2();
-							} else {
-								fatal_error = true;
-								cb2('Incorrect or');
-							}
-						});
-					}
-				}, function (err) {
-					cb(!err ? prevV : false);
-				});
-				break;
-			case 'comparison':
-				var vals = [];
-				var operator = arr[1];
-				if(operator === '='){
-					fatal_error = true;
-					return cb(false);
-				}
-				var param1 = arr[2];
-				var param2 = arr[3];
-				async.eachOfSeries([param1, param2], function (param, index, cb2) {
-					if (BigNumber.isBigNumber(param) || typeof param === 'string') {
-						vals[index] = param;
-						cb2();
-					} else {
-						evaluate(param, function (res) {
-							vals[index] = res;
 							cb2();
-						});
-					}
-				}, function () {
-					var val1 = vals[0];
-					var val2 = vals[1];
-					if(typeof val1 === 'boolean' || typeof val2 === 'boolean'){
-						if(typeof val1 !== 'boolean'){
-							if(BigNumber.isBigNumber(val1)) {
-								val1 = !(val1.eq(0));
-							} else if(typeof val1 === "string"){
-								val1 = !!val1;
-							}else{
-								fatal_error = true;
-								return cb(false);
-							}
+						} else {
+							evaluate(param, function (res) {
+								if (BigNumber.isBigNumber(res)) {
+									if (prevV === undefined) {
+										prevV = res;
+									} else {
+										prevV = prevV[f](res);
+									}
+									cb2();
+								} else {
+									fatal_error = true;
+									cb2('incorrect res')
+								}
+								
+							});
 						}
-						if(typeof val2 !== 'boolean'){
-							if(BigNumber.isBigNumber(val2)) {
-								val2 = !(val2.eq(0));
-							} else if(typeof val2 === "string"){
-								val2 = !!val2;
-							}else{
-								fatal_error = true;
-								return cb(false);
-							}
-						}
-						switch (operator) {
-							case '==':
-								return cb(val1 === val2);
-							case '>=':
-								return cb(val1 >= val2);
-							case '<=':
-								return cb(val1 <= val2);
-							case '!=':
-								return cb(val1 !== val2);
-							case '>':
-								return cb(val1 > val2);
-							case '<':
-								return cb(val1 < val2);
-						}
-					} else if(typeof val1 === 'string' || typeof val2 === 'string'){
-						if(BigNumber.isBigNumber(val1)) {
-							val1 = val1.toString();
-						}
-						if(BigNumber.isBigNumber(val2)) {
-							val2 = val2.toString();
-						}
-						switch (operator) {
-							case '==':
-								return cb(val1 === val2);
-							case '>=':
-								return cb(val1 >= val2);
-							case '<=':
-								return cb(val1 <= val2);
-							case '!=':
-								return cb(val1 !== val2);
-							case '>':
-								return cb(val1 > val2);
-							case '<':
-								return cb(val1 < val2);
-						}
-					} else if (BigNumber.isBigNumber(val1) && BigNumber.isBigNumber(val2)) {
-						switch (operator) {
-							case '==':
-								return cb(val1.eq(val2));
-							case '>=':
-								return cb(val1.gte(val2));
-							case '<=':
-								return cb(val1.lte(val2));
-							case '!=':
-								return cb(!(val1.eq(val2)));
-							case '>':
-								return cb(val1.gt(val2));
-							case '<':
-								return cb(val1.lt(val2));
-						}
+					}, function (err) {
+						cb(err ? false : prevV);
+					});
+					break;
+				case 'sin':
+				case 'cos':
+				case 'tan':
+				case 'asin':
+				case 'acos':
+				case 'atan':
+				case 'log':
+					if (BigNumber.isBigNumber(arr[1])) {
+						cb(new BigNumber(Math[op](arr[1].toNumber())));
 					} else {
-						fatal_error = true;
-						return cb(false);
-					}
-				});
-				break;
-			case 'ternary':
-				var conditionResult;
-				async.eachSeries([arr[1]], function (param, cb2) {
-					if (BigNumber.isBigNumber(param)) {
-						conditionResult = !param.eq(0);
-						cb2();
-					} else if (typeof param === 'boolean') {
-						conditionResult = param;
-						cb2();
-					} else {
-						evaluate(param, function (res) {
-							if(typeof res === 'boolean') {
-								conditionResult = res;
-								cb2();
-							} else if(BigNumber.isBigNumber(res)) {
-								conditionResult = !(res.eq(0));
-								cb2();
-							} else if(typeof res === 'string') {
-								conditionResult = !!res;
-								cb2();
-							} else {
-								fatal_error = true;
-								cb2('Incorrect res');
-							}
-						});
-					}
-				}, function (error) {
-					if(error){
-						fatal_error = true;
-						return cb(false);
-					}
-					var param2 = conditionResult ? arr[2] : arr[3];
-					if (BigNumber.isBigNumber(param2)) {
-						cb(param2);
-					} else if (typeof param2 === 'boolean') {
-						cb(param2);
-					} else if(typeof param2 === 'string'){
-						cb(param2);
-					} else {
-						evaluate(param2, function (res) {
+						evaluate(arr[1], function (res) {
 							if (BigNumber.isBigNumber(res)) {
-								cb(res);
-							} else if (typeof res === 'boolean') {
-								cb(res);
-							} else if(typeof res === 'string'){
-								cb(res);
-							}else{
+								cb(new BigNumber(Math[op](res.toNumber())));
+							} else {
 								fatal_error = true;
 								cb(false);
 							}
 						});
 					}
-				});
-				break;
-			case 'pi':
-				cb(new BigNumber(Math.PI));
-				break;
-			case 'e':
-				cb(new BigNumber(Math.E));
-				break;
-			case 'data_feed':
-			
+					break;
+				case 'sqrt':
+					if (BigNumber.isBigNumber(arr[1])) {
+						cb(arr[1].sqrt());
+					} else {
+						evaluate(arr[1], function (res) {
+							if (BigNumber.isBigNumber(res)) {
+								cb(res.sqrt());
+							} else {
+								fatal_error = true;
+								cb(false);
+							}
+						});
+					}
+					break;
+				case 'ceil':
+				case 'floor':
+				case 'round':
+					var roundingMode;
+					switch (op) {
+						case 'ceil':
+							roundingMode = BigNumber.ROUND_CEIL;
+							break;
+						case 'floor':
+							roundingMode = BigNumber.ROUND_FLOOR;
+							break;
+						case 'round':
+							roundingMode = BigNumber.ROUND_HALF_EVEN;
+							break;
+					}
+					if (BigNumber.isBigNumber(arr[1])) {
+						cb(arr[1].dp(0, roundingMode));
+					} else {
+						evaluate(arr[1], function (res) {
+							if (BigNumber.isBigNumber(res)) {
+								cb(res.dp(0, roundingMode));
+							} else {
+								fatal_error = true;
+								cb(false);
+							}
+						});
+					}
+					break;
+				case 'min':
+				case 'max':
+					var vals = [];
+					async.eachSeries(arr[1], function (param, cb2) {
+						if (BigNumber.isBigNumber(param)) {
+							vals.push(param);
+							cb2();
+						} else {
+							evaluate(param, function (res) {
+								if (BigNumber.isBigNumber(res)) {
+									vals.push(res);
+									cb2();
+								} else {
+									fatal_error = true;
+									cb2('Incorrect ' + op);
+								}
+							});
+						}
+					}, function (err) {
+						if (err) {
+							fatal_error = true;
+							return cb(false);
+						}
+						if (op === 'min') {
+							return cb(BigNumber.min.apply(null, vals));
+						} else {
+							return cb(BigNumber.max.apply(null, vals))
+						}
+					});
+					break;
+				case 'and':
+					var prevV = true;
+					async.eachSeries(arr.slice(1), function (param, cb2) {
+						if (typeof param === 'boolean') {
+							prevV = prevV && param;
+							cb2();
+						} else if (BigNumber.isBigNumber(param)) {
+							prevV = prevV && !(param.eq(0));
+							cb2();
+						} else if (typeof param === 'string') {
+							prevV = prevV && !!param;
+							cb2();
+						} else {
+							evaluate(param, function (res) {
+								if (typeof res === 'boolean') {
+									prevV = prevV && res;
+									cb2();
+								} else if (BigNumber.isBigNumber(res)) {
+									prevV = prevV && !(res.eq(0));
+									cb2();
+								} else if (typeof res === 'string') {
+									prevV = prevV && !!res;
+									cb2();
+								} else {
+									fatal_error = true;
+									cb2('Incorrect and');
+								}
+							});
+						}
+					}, function (err) {
+						cb(!err ? prevV : false);
+					});
+					break;
+				case 'or':
+					var prevV = false;
+					async.eachSeries(arr.slice(1), function (param, cb2) {
+						if (typeof param === 'boolean') {
+							prevV = prevV && param;
+							cb2();
+						} else if (BigNumber.isBigNumber(param)) {
+							prevV = prevV || !(param.eq(0));
+							cb2();
+						} else if (typeof param === 'string') {
+							prevV = prevV || !!param;
+							cb2();
+						} else {
+							evaluate(param, function (res) {
+								if (typeof res === 'boolean') {
+									prevV = prevV || res;
+									cb2();
+								} else if (BigNumber.isBigNumber(res)) {
+									prevV = prevV || !(res.eq(0));
+									cb2();
+								} else if (typeof res === 'string') {
+									prevV = prevV || !!res;
+									cb2();
+								} else {
+									fatal_error = true;
+									cb2('Incorrect or');
+								}
+							});
+						}
+					}, function (err) {
+						cb(!err ? prevV : false);
+					});
+					break;
+				case 'comparison':
+					var vals = [];
+					var operator = arr[1];
+					if (operator === '=') {
+						fatal_error = true;
+						return cb(false);
+					}
+					var param1 = arr[2];
+					var param2 = arr[3];
+					async.eachOfSeries([param1, param2], function (param, index, cb2) {
+						if (BigNumber.isBigNumber(param) || typeof param === 'string') {
+							vals[index] = param;
+							cb2();
+						} else {
+							evaluate(param, function (res) {
+								vals[index] = res;
+								cb2();
+							});
+						}
+					}, function () {
+						var val1 = vals[0];
+						var val2 = vals[1];
+						if (typeof val1 === 'boolean' || typeof val2 === 'boolean') {
+							if (typeof val1 !== 'boolean') {
+								if (BigNumber.isBigNumber(val1)) {
+									val1 = !(val1.eq(0));
+								} else if (typeof val1 === "string") {
+									val1 = !!val1;
+								} else {
+									fatal_error = true;
+									return cb(false);
+								}
+							}
+							if (typeof val2 !== 'boolean') {
+								if (BigNumber.isBigNumber(val2)) {
+									val2 = !(val2.eq(0));
+								} else if (typeof val2 === "string") {
+									val2 = !!val2;
+								} else {
+									fatal_error = true;
+									return cb(false);
+								}
+							}
+							switch (operator) {
+								case '==':
+									return cb(val1 === val2);
+								case '>=':
+									return cb(val1 >= val2);
+								case '<=':
+									return cb(val1 <= val2);
+								case '!=':
+									return cb(val1 !== val2);
+								case '>':
+									return cb(val1 > val2);
+								case '<':
+									return cb(val1 < val2);
+							}
+						} else if (typeof val1 === 'string' || typeof val2 === 'string') {
+							if (BigNumber.isBigNumber(val1)) {
+								val1 = val1.toString();
+							}
+							if (BigNumber.isBigNumber(val2)) {
+								val2 = val2.toString();
+							}
+							switch (operator) {
+								case '==':
+									return cb(val1 === val2);
+								case '>=':
+									return cb(val1 >= val2);
+								case '<=':
+									return cb(val1 <= val2);
+								case '!=':
+									return cb(val1 !== val2);
+								case '>':
+									return cb(val1 > val2);
+								case '<':
+									return cb(val1 < val2);
+							}
+						} else if (BigNumber.isBigNumber(val1) && BigNumber.isBigNumber(val2)) {
+							switch (operator) {
+								case '==':
+									return cb(val1.eq(val2));
+								case '>=':
+									return cb(val1.gte(val2));
+								case '<=':
+									return cb(val1.lte(val2));
+								case '!=':
+									return cb(!(val1.eq(val2)));
+								case '>':
+									return cb(val1.gt(val2));
+								case '<':
+									return cb(val1.lt(val2));
+							}
+						} else {
+							fatal_error = true;
+							return cb(false);
+						}
+					});
+					break;
+				case 'ternary':
+					var conditionResult;
+					async.eachSeries([arr[1]], function (param, cb2) {
+						if (BigNumber.isBigNumber(param)) {
+							conditionResult = !param.eq(0);
+							cb2();
+						} else if (typeof param === 'boolean') {
+							conditionResult = param;
+							cb2();
+						} else {
+							evaluate(param, function (res) {
+								if (typeof res === 'boolean') {
+									conditionResult = res;
+									cb2();
+								} else if (BigNumber.isBigNumber(res)) {
+									conditionResult = !(res.eq(0));
+									cb2();
+								} else if (typeof res === 'string') {
+									conditionResult = !!res;
+									cb2();
+								} else {
+									fatal_error = true;
+									cb2('Incorrect res');
+								}
+							});
+						}
+					}, function (error) {
+						if (error) {
+							fatal_error = true;
+							return cb(false);
+						}
+						var param2 = conditionResult ? arr[2] : arr[3];
+						if (BigNumber.isBigNumber(param2)) {
+							cb(param2);
+						} else if (typeof param2 === 'boolean') {
+							cb(param2);
+						} else if (typeof param2 === 'string') {
+							cb(param2);
+						} else {
+							evaluate(param2, function (res) {
+								if (BigNumber.isBigNumber(res)) {
+									cb(res);
+								} else if (typeof res === 'boolean') {
+									cb(res);
+								} else if (typeof res === 'string') {
+									cb(res);
+								} else {
+									fatal_error = true;
+									cb(false);
+								}
+							});
+						}
+					});
+					break;
+				case 'pi':
+					cb(new BigNumber(Math.PI));
+					break;
+				case 'e':
+					cb(new BigNumber(Math.E));
+					break;
+				case 'data_feed':
+				
 				function getDataFeed(params, cb) {
 					var arrAddresses = params.oracles.value.split(':');
 					var feed_name = params.feed_name.value;
@@ -647,21 +653,21 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 						if (BigNumber.isBigNumber(value)) {
 							var bForceNumericComparison = (['>', '>=', '<', '<='].indexOf(relation) >= 0);
 							var plus_0 = bForceNumericComparison ? '+0' : '';
-							value_condition = '(value' + plus_0 + relation + conn.escape(value.toString()) +
-								' OR int_value' + relation + conn.escape(value.toString()) + ')';
+							value_condition = '(value' + plus_0 + relation + value.toString() +
+								' OR int_value' + relation + value.toString() + ')';
 						}
 						else {
 							value_condition = 'value' + relation + '?';
 							queryParams.push(value);
 						}
 					}
-					if(params.mci) {
+					if (params.mci) {
 						queryParams.push(objValidationState.last_ball_mci, min_mci);
 					}
 					conn.query(
 						"SELECT value, int_value FROM data_feeds CROSS JOIN units USING(unit) CROSS JOIN unit_authors USING(unit) \n\
 								WHERE address IN(?) AND feed_name=? " + (value_condition ? ' AND ' + value_condition : '') + " \n\
-							AND " + (params.mci ?  "main_chain_index<=? AND main_chain_index" + mci_relation + "? ": '')+ " \n\
+							AND " + (params.mci ? "main_chain_index<=? AND main_chain_index" + mci_relation + "? " : '') + " \n\
 							AND sequence='good' AND is_stable=1 " + ifseveral + " LIMIT " + (abortIfSeveral ? "2" : "1"),
 						queryParams,
 						function (rows) {
@@ -685,18 +691,19 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 						}
 					);
 				}
+					
+					getDataFeed(arr[1], function (err, result) {
+						if (err) {
+							fatal_error = true;
+							return cb(false);
+						}
+						cb(result);
+					});
+					break;
+				case 'input':
+				case 'output':
+					var type = op + 's';
 				
-				getDataFeed(arr[1], function (err, result) {
-					if (err) {
-						fatal_error = true;
-						return cb(false);
-					}
-					cb(result);
-				});
-				break;
-			case 'input':
-			case 'output':
-				var type = op + 's';
 				function findOutputOrInputAndReturnName(objParams) {
 					var asset = objParams.asset ? objParams.asset.value : null;
 					var operator = objParams.asset ? objParams.asset.operator : null;
@@ -763,62 +770,68 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 						return '';
 					}
 				}
+					
+					var result = findOutputOrInputAndReturnName(arr[1]);
+					if (result === '') {
+						fatal_error = true;
+						return cb(false);
+					}
+					if (arr[2] === 'amount') {
+						cb(new BigNumber(result['amount']));
+					} else if (arr[2] === 'asset') {
+						if (!result['asset']) result['asset'] = 'base';
+						cb(result['asset'])
+					} else {
+						cb(result[arr[2]]);
+					}
+					break;
 				
-				var result = findOutputOrInputAndReturnName(arr[1]);
-				if (result === '') {
+				case 'concat':
+					var result = '';
+					async.eachSeries(arr.slice(1), function (param, cb2) {
+						if (BigNumber.isBigNumber(param)) {
+							result += param.toString();
+							cb2();
+						} else if (typeof param === 'string') {
+							result += param;
+							cb2();
+						} else {
+							evaluate(param, function (res) {
+								if (BigNumber.isBigNumber(res)) {
+									result += res.toString();
+									cb2();
+								} else if (typeof res === 'string') {
+									result += res;
+									cb2();
+								} else {
+									fatal_error = true;
+									cb2('Incorrect res');
+								}
+							});
+						}
+					}, function (err) {
+						cb(!err ? result : false);
+					});
+					break;
+				default:
 					fatal_error = true;
 					cb(false);
-				}
-				if (arr[2] === 'amount') {
-					cb(new BigNumber(result['amount']));
-				} else if (arr[2] === 'asset') {
-					if(!result['asset']) result['asset'] = 'base';
-					cb(result['asset'])
-				} else {
-					cb(result[arr[2]]);
-				}
-				break;
-				
-			case 'concat':
-				var result = '';
-				async.eachSeries(arr.slice(1), function (param, cb2) {
-					if (BigNumber.isBigNumber(param)) {
-						result += param.toString();
-						cb2();
-					} else if (typeof param === 'string') {
-						result += param;
-						cb2();
-					} else {
-						evaluate(param, function (res) {
-							if (BigNumber.isBigNumber(res)) {
-								result += res.toString();
-								cb2();
-							} else if(typeof res === 'string') {
-								result += res;
-								cb2();
-							} else {
-								fatal_error = true;
-								cb2('Incorrect res');
-							}
-						});
-					}
-				}, function (err) {
-					cb(!err ? result : false);
-				});
-				break;
-			default:
-				if (BigNumber.isBigNumber(arr)) return cb(arr);
-				if (typeof arr === 'boolean') return cb(arr);
-				if (typeof arr === 'string') return cb(arr);
-				cb(false);
-				break;
+					break;
+			}
+		} else {
+			if (BigNumber.isBigNumber(arr)) return cb(arr);
+			if (typeof arr === 'boolean') return cb(arr);
+			if (typeof arr === 'string') return cb(arr);
+			fatal_error = true;
+			cb(false);
 		}
 	}
-	if(parser.results.length === 1 && parser.results[0]) {
+	
+	if (parser.results.length === 1 && parser.results[0]) {
 		evaluate(parser.results[0], res => {
-			if(fatal_error) {
+			if (fatal_error) {
 				callback(false);
-			}else{
+			} else {
 				callback(res);
 			}
 		});
