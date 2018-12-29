@@ -13,11 +13,12 @@ var cache = {};
 
 exports.validate = function (formula, complexity, callback) {
 	complexity++;
-	var parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
+	var parser = {};
 	try {
 		if(cache[formula]){
 			parser.results = cache[formula];
 		}else {
+			parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
 			parser.feed(formula);
 			if(formulasInCache.length > cacheLimit){
 				var f = formulasInCache.shift();
@@ -251,17 +252,22 @@ function validDataFeed(arr) {
 }
 
 exports.evaluate = function (conn, formula, messages, objValidationState, address, callback) {
-	var parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
+	var parser = {};
 	if(cache[formula]){
 		parser.results = cache[formula];
 	}else {
-		parser.feed(formula);
-		if(formulasInCache.length > cacheLimit){
-			var f = formulasInCache.shift();
-			delete cache[f];
+		try {
+			parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
+			parser.feed(formula);
+			formulasInCache.push(formula);
+			cache[formula] = parser.results;
+			if (formulasInCache.length > cacheLimit) {
+				var f = formulasInCache.shift();
+				delete cache[f];
+			}
+		}catch (e) {
+			callback(false);
 		}
-		formulasInCache.push(formula);
-		cache[formula] = parser.results;
 	}
 	var fatal_error = false;
 	

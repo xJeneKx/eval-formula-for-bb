@@ -22,8 +22,23 @@ var objValidationState = {
 				"address": "MXMEKGN37H5QO2AWHT7XRG6LHJVVTAWU"
 			}]
 		}
+	}],
+	messages: [{
+		"app": "payment",
+		"payload_hash": "vHTdyhuQI1jnlAAyc6EGzwVCH0BGFT+dIYrsjTeRV8k=",
+		"payload_location": "inline",
+		"payload": {
+			"inputs": [{
+				"unit": "W/6iS75IT8mKJzKyyjz5dKCp9Ux6F7+AUUNq8VLiZ6o=",
+				"message_index": 0,
+				"output_index": 0
+			}],
+			"outputs": [
+				{"address": "MXMEKGN37H5QO2AWHT7XRG6LHJVVTAWU", "amount": 19088},
+				{"address": "GFK3RDAPQLLNCMQEVGGD2KCPZTLSG3HN", "amount": 1}
+			]
+		}
 	}]
-	
 };
 
 
