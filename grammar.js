@@ -8,8 +8,12 @@ function id(x) { return x[0]; }
 
 	var lexer = moo.compile({
 		string: [
-			{match: /"(?:\\["\\rn]|[\\\rn]|[^"\\])*?"/, lineBreaks: true},
-			{match: /'(?:\\['\\rn]|[\\\rn]|[^'\\])*?'/, lineBreaks: true}
+			{match: /"(?:\\["\\rn]|[\\\rn]|[^"\\])*?"/, lineBreaks: true, value: function(v){
+				return v.slice(1, -1).replace(/\\\'/g, "'").replace(/\\\"/g, '"').replace(/\\\\/g, '\\');
+			}},
+			{match: /'(?:\\['\\rn]|[\\\rn]|[^'\\])*?'/, lineBreaks: true, value: function(v){
+				return v.slice(1, -1).replace(/\\\'/g, "'").replace(/\\\"/g, '"').replace(/\\\\/g, '\\');
+			}}
 		],
 		WS: {match: /[\s]+/, lineBreaks: true},
 		digits: /-?(?:[0-9]|[1-9][0-9]+)(?:\.[0-9]+)?(?:[eE][-+]?[0-9]+)?\b/,
@@ -54,7 +58,7 @@ var grammar = {
     {"name": "ternary", "symbols": ["expr", {"literal":"?"}, "expr", {"literal":":"}, "expr"], "postprocess": function(d) {return ['ternary', d[0], d[2], d[4]];}},
     {"name": "OR", "symbols": ["expr2", (lexer.has("or") ? {type: "or"} : or), "expr"], "postprocess": function(d) {return ['or', d[0], d[2]];}},
     {"name": "AND", "symbols": ["expr2", (lexer.has("and") ? {type: "and"} : and), "expr"], "postprocess": function(d) {return ['and', d[0], d[2]];}},
-    {"name": "expr$subexpression$1", "symbols": [(lexer.has("string") ? {type: "string"} : string)]},
+    {"name": "expr$subexpression$1", "symbols": ["string"]},
     {"name": "expr$subexpression$1", "symbols": ["AS"]},
     {"name": "expr", "symbols": ["expr$subexpression$1", (lexer.has("concat") ? {type: "concat"} : concat), "expr"], "postprocess": function(d) {return ['concat', d[0][0], d[2]];}},
     {"name": "expr$subexpression$2", "symbols": ["AS"]},
@@ -66,10 +70,10 @@ var grammar = {
     {"name": "expr", "symbols": ["OR"], "postprocess": id},
     {"name": "expr", "symbols": ["ternary"], "postprocess": id},
     {"name": "expr", "symbols": ["AS"], "postprocess": id},
-    {"name": "expr", "symbols": [(lexer.has("string") ? {type: "string"} : string)], "postprocess": id},
+    {"name": "expr", "symbols": ["string"], "postprocess": id},
     {"name": "expr2", "symbols": ["AS", "comparisonOperator", "AS"], "postprocess": function(d) {return ['comparison', d[1], d[0], d[2]];}},
     {"name": "expr2", "symbols": ["AS"], "postprocess": id},
-    {"name": "expr2", "symbols": [(lexer.has("string") ? {type: "string"} : string)], "postprocess": id},
+    {"name": "expr2", "symbols": ["string"], "postprocess": id},
     {"name": "comparisonOperator", "symbols": [(lexer.has("comparisonOperators") ? {type: "comparisonOperators"} : comparisonOperators)], "postprocess": function(d) { return d[0].value }},
     {"name": "P", "symbols": [(lexer.has("l") ? {type: "l"} : l), "expr", (lexer.has("r") ? {type: "r"} : r)], "postprocess": function(d) {return d[1]; }},
     {"name": "P", "symbols": ["N"], "postprocess": id},
@@ -116,7 +120,7 @@ var grammar = {
     {"name": "N$subexpression$1$ebnf$1", "symbols": []},
     {"name": "N$subexpression$1$ebnf$1$subexpression$1$ebnf$1", "symbols": []},
     {"name": "N$subexpression$1$ebnf$1$subexpression$1$ebnf$1", "symbols": ["N$subexpression$1$ebnf$1$subexpression$1$ebnf$1", (lexer.has("comma") ? {type: "comma"} : comma)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "N$subexpression$1$ebnf$1$subexpression$1$subexpression$1", "symbols": [(lexer.has("string") ? {type: "string"} : string)]},
+    {"name": "N$subexpression$1$ebnf$1$subexpression$1$subexpression$1", "symbols": ["string"]},
     {"name": "N$subexpression$1$ebnf$1$subexpression$1$subexpression$1", "symbols": ["float"]},
     {"name": "N$subexpression$1$ebnf$1$subexpression$1", "symbols": ["N$subexpression$1$ebnf$1$subexpression$1$ebnf$1", (lexer.has("dfParamsName") ? {type: "dfParamsName"} : dfParamsName), (lexer.has("comparisonOperators") ? {type: "comparisonOperators"} : comparisonOperators), "N$subexpression$1$ebnf$1$subexpression$1$subexpression$1"]},
     {"name": "N$subexpression$1$ebnf$1", "symbols": ["N$subexpression$1$ebnf$1", "N$subexpression$1$ebnf$1$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
@@ -131,11 +135,7 @@ var grammar = {
         
         		params[name] = {};
         		params[name]['operator'] = operator;
-        		if(BigNumber.isBigNumber(value)){
-        			params[name]['value'] = value;
-        		} else {
-        			params[name]['value'] = value.value.slice(1, -1).replace('\\\'', "'").replace("\\\"", '"').replace("\\", '');
-        		}
+        		params[name]['value'] = value;
         	}
         	return ['data_feed', params]
         }},

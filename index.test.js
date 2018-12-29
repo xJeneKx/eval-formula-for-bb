@@ -563,7 +563,7 @@ test('validate min ok', t => {
 	})
 });
 
-test('validate ternary ok', t => {
+test('eval ternary ok', t => {
 	evalFormula(0, "1 == 1 ? 'ok' : '!ok'", 0, 0, 0, res => {
 		t.deepEqual(res, 'ok');
 	})
@@ -583,6 +583,12 @@ test('validate 1 + datafeed error', t => {
 
 test('inp', t => {
 	validateFormula("input[address=this address, amount>10].amount", 0, res => {
+		t.deepEqual(res.error, false);
+	})
+});
+
+test('inp', t => {
+	validateFormula("input[address=this address].amount == 20000", 0, res => {
 		t.deepEqual(res.error, false);
 	})
 });

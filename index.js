@@ -141,6 +141,7 @@ exports.validate = function (formula, complexity, callback) {
 			default:
 				if (BigNumber.isBigNumber(arr[0])) return cb(true);
 				if (typeof arr[0] === 'boolean') return cb(true);
+				if (typeof arr === 'string') return cb(true);
 				cb(false);
 				break;
 		}
@@ -189,6 +190,7 @@ function validDataFeed(arr) {
 			if(BigNumber.isBigNumber(value)) value = value.toString();
 			switch (k) {
 				case 'oracles':
+					if (value.trim() === '') return {error: true, complexity};
 					if (operator !== '=') return {error: true, complexity};
 					var addresses = value.split(':');
 					if (addresses.length === 0) return {error: true, complexity};
@@ -200,6 +202,7 @@ function validDataFeed(arr) {
 				
 				case 'feed_name':
 					if (!(operator === '=')) return {error: true, complexity};
+					if (value.trim() === '') return {error: true, complexity};
 					break;
 				
 				case 'mci':
@@ -350,32 +353,6 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 				}
 				break;
 			case 'min':
-				var vals = [];
-				async.eachSeries(arr[1], function (param, cb2) {
-					if (BigNumber.isBigNumber(param)) {
-						vals.push(param);
-						cb2();
-					} else {
-						evaluate(param, function (res) {
-							if(BigNumber.isBigNumber(res)) {
-								vals.push(res);
-								cb2();
-							} else {
-								fatal_error = true;
-								cb2('Incorrect min');
-							}
-						});
-					}
-				}, function (err) {
-					if(err) {
-						fatal_error = true;
-						return cb(false);
-					}
-					cb(vals.reduce(function (a, b) {
-						return BigNumber.min(a, b);
-					}));
-				});
-				break;
 			case 'max':
 				var vals = [];
 				async.eachSeries(arr[1], function (param, cb2) {
@@ -389,7 +366,7 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 								cb2();
 							} else {
 								fatal_error = true;
-								cb2('Incorrect max');
+								cb2('Incorrect ' + op);
 							}
 						});
 					}
@@ -399,7 +376,11 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 						return cb(false);
 					}
 					cb(vals.reduce(function (a, b) {
-						return BigNumber.max(a, b);
+						if(op === 'min') {
+							return BigNumber.min(a, b);
+						}else{
+							return BigNumber.max(a, b);
+						}
 					}));
 				});
 				break;
@@ -409,8 +390,8 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 					if (BigNumber.isBigNumber(param)) {
 						prevV = prevV && !(param.eq(0));
 						cb2();
-					} else if(param.type && param.type === 'string'){
-						prevV = prevV || !!(lexerStringToString(param.value));
+					} else if(typeof param === 'string'){
+						prevV = prevV && !!param;
 						cb2();
 					} else {
 						evaluate(param, function (res) {
@@ -420,8 +401,8 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 							} else if(BigNumber.isBigNumber(res)) {
 								prevV = prevV && !(res.eq(0));
 								cb2();
-							} else if(res.type && res.type === 'string'){
-								prevV = prevV || !!(lexerStringToString(res.value));
+							} else if(typeof res === 'string'){
+								prevV = prevV && !!res;
 								cb2();
 							} else {
 								fatal_error = true;
@@ -439,8 +420,8 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 					if (BigNumber.isBigNumber(param)) {
 						prevV = prevV || !(param.eq(0));
 						cb2();
-					} else if(param.type && param.type === 'string'){
-						prevV = prevV || !!(lexerStringToString(param.value));
+					} else if(typeof param === 'string'){
+						prevV = prevV || !!param;
 						cb2();
 					} else {
 						evaluate(param, function (res) {
@@ -450,8 +431,8 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 							} else if(BigNumber.isBigNumber(res)) {
 								prevV = prevV || !(res.eq(0));
 								cb2();
-							} else if(res.type && res.type === 'string') {
-								prevV = prevV || !!(lexerStringToString(res.value));
+							} else if(typeof res === 'string') {
+								prevV = prevV || !!res;
 								cb2();
 							} else {
 								fatal_error = true;
@@ -490,7 +471,7 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 							if(BigNumber.isBigNumber(val1)) {
 								val1 = !(val1.eq(0));
 							} else if(typeof val1 === "string"){
-								val1 = !!lexerStringToString(val1);
+								val1 = !!val1;
 							}else{
 								fatal_error = true;
 								return cb(false);
@@ -500,7 +481,7 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 							if(BigNumber.isBigNumber(val2)) {
 								val2 = !(val2.eq(0));
 							} else if(typeof val2 === "string"){
-								val2 = !!lexerStringToString(val2);
+								val2 = !!val2;
 							}else{
 								fatal_error = true;
 								return cb(false);
@@ -523,13 +504,9 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 					} else if(typeof val1 === 'string' || typeof val2 === 'string'){
 						if(BigNumber.isBigNumber(val1)) {
 							val1 = val1.toString();
-						} else{
-							val1 = lexerStringToString(val1);
 						}
 						if(BigNumber.isBigNumber(val2)) {
 							val2 = val2.toString();
-						}else{
-							val2 = lexerStringToString(val2);
 						}
 						switch (operator) {
 							case '==':
@@ -580,16 +557,13 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 							if(typeof res === 'boolean') {
 								conditionResult = res;
 								cb2();
-							}else if(BigNumber.isBigNumber(res)){
+							} else if(BigNumber.isBigNumber(res)) {
 								conditionResult = !(res.eq(0));
 								cb2();
-							}else if(typeof res === 'string'){
+							} else if(typeof res === 'string') {
 								conditionResult = !!res;
 								cb2();
-							} else if(res.type && res.type === 'string'){
-								conditionResult = !!res.value;
-								cb2();
-							} else{
+							} else {
 								fatal_error = true;
 								cb2('Incorrect res');
 							}
@@ -607,8 +581,6 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 						cb(param2);
 					} else if(typeof param2 === 'string'){
 						cb(param2);
-					} else if(param2.type && param2.type === 'string'){
-						cb(lexerStringToString(param2.value));
 					} else {
 						evaluate(param2, function (res) {
 							if (BigNumber.isBigNumber(res)) {
@@ -617,8 +589,6 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 								cb(res);
 							} else if(typeof res === 'string'){
 								cb(res);
-							} else if(res.type && res.type === 'string'){
-								cb(lexerStringToString(res.value));
 							}else{
 								fatal_error = true;
 								cb(false);
@@ -805,21 +775,18 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 					if (BigNumber.isBigNumber(param)) {
 						result += param.toString();
 						cb2();
-					} else if (param.value) {
-						result += lexerStringToString(param.value);
+					} else if (typeof param === 'string') {
+						result += param;
 						cb2();
 					} else {
 						evaluate(param, function (res) {
 							if (BigNumber.isBigNumber(res)) {
 								result += res.toString();
 								cb2();
-							} else if (res.value) {
-								result += lexerStringToString(res.value);
-								cb2();
-							}else if(typeof res === 'string'){
+							} else if(typeof res === 'string') {
 								result += res;
 								cb2();
-							}else{
+							} else {
 								fatal_error = true;
 								cb2('Incorrect res');
 							}
@@ -833,7 +800,7 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 				if (BigNumber.isBigNumber(arr[0])) return cb(arr[0]);
 				if (BigNumber.isBigNumber(arr)) return cb(arr);
 				if (typeof arr[0] === 'boolean') return cb(arr[0]);
-				if (arr.type && arr.type === 'string') return cb(arr);
+				if (typeof arr === 'string') return cb(arr);
 				cb(false);
 				break;
 		}
@@ -850,7 +817,3 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 		callback(false);
 	}
 };
-
-function lexerStringToString(string){
-	return string.slice(1,-1).replace('\\\'', "'").replace("\\\"", '"').replace("\\", '');
-}

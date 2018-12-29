@@ -4,8 +4,12 @@
 
 	var lexer = moo.compile({
 		string: [
-			{match: /"(?:\\["\\rn]|[\\\rn]|[^"\\])*?"/, lineBreaks: true},
-			{match: /'(?:\\['\\rn]|[\\\rn]|[^'\\])*?'/, lineBreaks: true}
+			{match: /"(?:\\["\\rn]|[\\\rn]|[^"\\])*?"/, lineBreaks: true, value: function(v){
+				return v.slice(1, -1).replace(/\\\'/g, "'").replace(/\\\"/g, '"').replace(/\\\\/g, '\\');
+			}},
+			{match: /'(?:\\['\\rn]|[\\\rn]|[^'\\])*?'/, lineBreaks: true, value: function(v){
+				return v.slice(1, -1).replace(/\\\'/g, "'").replace(/\\\"/g, '"').replace(/\\\\/g, '\\');
+			}}
 		],
 		WS: {match: /[\s]+/, lineBreaks: true},
 		digits: /-?(?:[0-9]|[1-9][0-9]+)(?:\.[0-9]+)?(?:[eE][-+]?[0-9]+)?\b/,
@@ -56,18 +60,18 @@ OR -> expr2 %or expr {% function(d) {return ['or', d[0], d[2]];}%}
 
 AND -> expr2 %and expr {% function(d) {return ['and', d[0], d[2]];}%}
 
-expr -> (%string|AS) %concat expr {% function(d) {return ['concat', d[0][0], d[2]];}%}
+expr -> (string|AS) %concat expr {% function(d) {return ['concat', d[0][0], d[2]];}%}
 	| (AS|string) comparisonOperator (AS|string) {% function(d) {return ['comparison', d[1], d[0][0], d[2][0]];}%}
 	| AND {% id %}
 	| OR {% id %}
 	| ternary {% id %}
 	| AS {% id %}
-	| %string {% id %}
+	| string {% id %}
 
 
 expr2 -> AS comparisonOperator AS {% function(d) {return ['comparison', d[1], d[0], d[2]];}%}
 	| AS {% id %}
-	| %string {% id %}
+	| string {% id %}
 
 comparisonOperator -> %comparisonOperators {% function(d) { return d[0].value } %}
 
@@ -103,7 +107,7 @@ N -> float          {% id %}
     | "ceil" P    {% function(d) {return ['ceil', d[1]]; } %}
     | "floor" P    {% function(d) {return ['floor', d[1]]; } %}
     | "round" P    {% function(d) {return ['round', d[1]]; } %}
-    | (%data_feed %sl ( %comma:* %dfParamsName %comparisonOperators (%string|float)):* %sr) {% function (d){
+    | (%data_feed %sl ( %comma:* %dfParamsName %comparisonOperators (string|float)):* %sr) {% function (d){
 		var params = {};
 		var arrParams = d[0][2];
 		for(var i = 0; i < arrParams.length; i++){
@@ -113,11 +117,7 @@ N -> float          {% id %}
 
 			params[name] = {};
 			params[name]['operator'] = operator;
-			if(BigNumber.isBigNumber(value)){
-				params[name]['value'] = value;
-			} else {
-				params[name]['value'] = value.value.slice(1, -1).replace('\\\'', "'").replace("\\\"", '"').replace("\\", '');
-			}
+			params[name]['value'] = value;
 		}
 		return ['data_feed', params]
 	}%}
