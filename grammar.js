@@ -9,10 +9,10 @@ function id(x) { return x[0]; }
 	var lexer = moo.compile({
 		string: [
 			{match: /"(?:\\["\\rn]|[\\\rn]|[^"\\])*?"/, lineBreaks: true, value: function(v){
-				return v.slice(1, -1).replace(/\\\'/g, "'").replace(/\\\"/g, '"').replace(/\\\\/g, '\\');
+				return v.slice(1, -1).replace(/\\\"/g, '"').replace(/\\\\/g, '\\');
 			}},
 			{match: /'(?:\\['\\rn]|[\\\rn]|[^'\\])*?'/, lineBreaks: true, value: function(v){
-				return v.slice(1, -1).replace(/\\\'/g, "'").replace(/\\\"/g, '"').replace(/\\\\/g, '\\');
+				return v.slice(1, -1).replace(/\\\'/g, "'").replace(/\\\\/g, '\\');
 			}}
 		],
 		WS: {match: /[\s]+/, lineBreaks: true},

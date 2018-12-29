@@ -92,7 +92,7 @@ exports.validate = function (formula, complexity, callback) {
 				async.eachSeries(arr.slice(1), function (param, cb2) {
 					if (BigNumber.isBigNumber(param)) {
 						cb2();
-					} else if(param.type && param.type === 'string') {
+					} else if(typeof param === 'string') {
 						cb2();
 					} else {
 						evaluate(param, function (res) {
@@ -127,7 +127,7 @@ exports.validate = function (formula, complexity, callback) {
 				async.eachSeries(arr.slice(1), function (param, cb2) {
 					if (BigNumber.isBigNumber(param)) {
 						cb2();
-					} else if (param.type && param.type === 'string') {
+					} else if(typeof param === 'string') {
 						cb2();
 					} else {
 						evaluate(param, function (res) {
@@ -139,9 +139,9 @@ exports.validate = function (formula, complexity, callback) {
 				});
 				break;
 			default:
-				if (BigNumber.isBigNumber(arr[0])) return cb(true);
-				if (typeof arr[0] === 'boolean') return cb(true);
+				if (BigNumber.isBigNumber(arr)) return cb(true);
 				if (typeof arr === 'string') return cb(true);
+				if (typeof arr === 'boolean') return cb(true);
 				cb(false);
 				break;
 		}
@@ -162,6 +162,7 @@ function validInputAndOutput(params) {
 		var operator = params[k].operator;
 		var value = params[k].value;
 		if(BigNumber.isBigNumber(value)) value = value.toString();
+		if (operator === '==') return false;
 		switch (k) {
 			case 'address':
 				if (operator !== '=' && operator !== '!=') return false;
@@ -188,6 +189,7 @@ function validDataFeed(arr) {
 			var operator = arr[k].operator;
 			var value = arr[k].value;
 			if(BigNumber.isBigNumber(value)) value = value.toString();
+			if (operator === '==') return false;
 			switch (k) {
 				case 'oracles':
 					if (value.trim() === '') return {error: true, complexity};
@@ -375,19 +377,20 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 						fatal_error = true;
 						return cb(false);
 					}
-					cb(vals.reduce(function (a, b) {
-						if(op === 'min') {
-							return BigNumber.min(a, b);
-						}else{
-							return BigNumber.max(a, b);
-						}
-					}));
+					if(op === 'min') {
+						return cb(BigNumber.min.apply(null, vals));
+					}else{
+						return cb(BigNumber.max.apply(null, vals))
+					}
 				});
 				break;
 			case 'and':
 				var prevV = true;
 				async.eachSeries(arr.slice(1), function (param, cb2) {
-					if (BigNumber.isBigNumber(param)) {
+					if(typeof param === 'boolean'){
+						prevV = prevV && param;
+						cb2();
+					} else if (BigNumber.isBigNumber(param)) {
 						prevV = prevV && !(param.eq(0));
 						cb2();
 					} else if(typeof param === 'string'){
@@ -417,7 +420,10 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 			case 'or':
 				var prevV = false;
 				async.eachSeries(arr.slice(1), function (param, cb2) {
-					if (BigNumber.isBigNumber(param)) {
+					if(typeof param === 'boolean'){
+						prevV = prevV && param;
+						cb2();
+					} else if (BigNumber.isBigNumber(param)) {
 						prevV = prevV || !(param.eq(0));
 						cb2();
 					} else if(typeof param === 'string'){
@@ -797,9 +803,8 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 				});
 				break;
 			default:
-				if (BigNumber.isBigNumber(arr[0])) return cb(arr[0]);
 				if (BigNumber.isBigNumber(arr)) return cb(arr);
-				if (typeof arr[0] === 'boolean') return cb(arr[0]);
+				if (typeof arr === 'boolean') return cb(arr);
 				if (typeof arr === 'string') return cb(arr);
 				cb(false);
 				break;
