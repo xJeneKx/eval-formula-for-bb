@@ -616,7 +616,7 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 					var feed_name = params.feed_name.value;
 					var value = null;
 					var relation = '';
-					var mci_relation = '<=';
+					var mci_relation = '';
 					var min_mci = 0;
 					if (params.feed_value) {
 						value = params.feed_value.value;
@@ -647,18 +647,22 @@ exports.evaluate = function (conn, formula, messages, objValidationState, addres
 						if (BigNumber.isBigNumber(value)) {
 							var bForceNumericComparison = (['>', '>=', '<', '<='].indexOf(relation) >= 0);
 							var plus_0 = bForceNumericComparison ? '+0' : '';
-							value_condition = '(value' + plus_0 + relation + value.toString() + ' OR int_value' + relation + value.toString() + ')';
+							value_condition = '(value' + plus_0 + relation + conn.escape(value.toString()) +
+								' OR int_value' + relation + conn.escape(value.toString()) + ')';
 						}
 						else {
 							value_condition = 'value' + relation + '?';
 							queryParams.push(value);
 						}
 					}
-					queryParams.push(objValidationState.last_ball_mci, min_mci);
+					if(params.mci) {
+						queryParams.push(objValidationState.last_ball_mci, min_mci);
+					}
 					conn.query(
 						"SELECT value, int_value FROM data_feeds CROSS JOIN units USING(unit) CROSS JOIN unit_authors USING(unit) \n\
 								WHERE address IN(?) AND feed_name=? " + (value_condition ? ' AND ' + value_condition : '') + " \n\
-							AND main_chain_index<=? AND main_chain_index" + mci_relation + "? AND sequence='good' AND is_stable=1 " + ifseveral + " LIMIT " + (abortIfSeveral ? "2" : "1"),
+							AND " + (params.mci ?  "main_chain_index<=? AND main_chain_index" + mci_relation + "? ": '')+ " \n\
+							AND sequence='good' AND is_stable=1 " + ifseveral + " LIMIT " + (abortIfSeveral ? "2" : "1"),
 						queryParams,
 						function (rows) {
 							if (rows.length) {
