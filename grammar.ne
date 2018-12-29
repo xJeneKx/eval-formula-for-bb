@@ -107,28 +107,28 @@ N -> float          {% id %}
     | "ceil" P    {% function(d) {return ['ceil', d[1]]; } %}
     | "floor" P    {% function(d) {return ['floor', d[1]]; } %}
     | "round" P    {% function(d) {return ['round', d[1]]; } %}
-    | (%data_feed %sl ( %comma:* %dfParamsName %comparisonOperators (string|float)):* %sr) {% function (d){
+    | (%data_feed %sl ( %comma:* %dfParamsName %comparisonOperators (string|float)):* %sr) {% function (d, i, reject){
 		var params = {};
 		var arrParams = d[0][2];
 		for(var i = 0; i < arrParams.length; i++){
 			var name = arrParams[i][1].value;
 			var operator = arrParams[i][2].value
 			var value = arrParams[i][3][0];
-
+			if(params[name]) return reject;
 			params[name] = {};
 			params[name]['operator'] = operator;
 			params[name]['value'] = value;
 		}
 		return ['data_feed', params]
 	}%}
-    | (%io %sl ( %comma:* %ioParamsName %comparisonOperators (%ioParamValue|float)):* %sr ) %dot %ioParamsName {% function (d){
+    | (%io %sl ( %comma:* %ioParamsName %comparisonOperators (%ioParamValue|float)):* %sr ) %dot %ioParamsName {% function (d, i, reject){
 		var params = {};
 		var arrParams = d[0][2];
 		for(var i = 0; i < arrParams.length; i++){
 			var name = arrParams[i][1].value;
 			var operator = arrParams[i][2].value
 			var value = arrParams[i][3][0];
-
+			if(params[name]) return reject;
 			params[name] = {};
 			params[name]['operator'] = operator;
 			if(BigNumber.isBigNumber(value)){
